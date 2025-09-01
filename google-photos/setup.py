@@ -75,14 +75,14 @@ def setup_base_schema_and_indexes(db_instance):
       CREATE TABLE IF NOT EXISTS Person (
                               person_id STRING(36) NOT NULL,
                               name      STRING(MAX)
-      ) PRIMARY KEY (person_id);
+      ) PRIMARY KEY (person_id)
       ""","""
       CREATE TABLE IF NOT EXISTS Photo (
                              photo_id       STRING(36) NOT NULL,
                              timestamp      TIMESTAMP,
                              location_name  STRING(MAX),
                              photo_location STRING(MAX)
-      ) PRIMARY KEY (photo_id);
+      ) PRIMARY KEY (photo_id)
       ""","""
       CREATE TABLE IF NOT EXISTS Memories (
                                 memory_id          STRING(36) NOT NULL,
@@ -91,21 +91,21 @@ def setup_base_schema_and_indexes(db_instance):
                                 memory_description STRING(MAX),
                                 creation_timestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
                                 CONSTRAINT fk_memories_user FOREIGN KEY (user_id) REFERENCES Person (person_id) ON DELETE CASCADE
-      ) PRIMARY KEY (memory_id);
+      ) PRIMARY KEY (memory_id)
       ""","""
       CREATE TABLE IF NOT EXISTS PersonOwnsPhoto (
                                        person_id STRING(36) NOT NULL,
                                        photo_id  STRING(36) NOT NULL,
                                        CONSTRAINT fk_owns_person FOREIGN KEY (person_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                        CONSTRAINT fk_owns_photo FOREIGN KEY (photo_id) REFERENCES Photo (photo_id) ON DELETE CASCADE
-      ) PRIMARY KEY (person_id, photo_id);
+      ) PRIMARY KEY (person_id, photo_id)
       ""","""
       CREATE TABLE IF NOT EXISTS PersonAppearsInPhoto (
                                             person_id STRING(36) NOT NULL,
                                             photo_id  STRING(36) NOT NULL,
                                             CONSTRAINT fk_appears_person FOREIGN KEY (person_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                             CONSTRAINT fk_appears_photo FOREIGN KEY (photo_id) REFERENCES Photo (photo_id) ON DELETE CASCADE
-      ) PRIMARY KEY (person_id, photo_id);
+      ) PRIMARY KEY (person_id, photo_id)
       ""","""
       CREATE TABLE IF NOT EXISTS PersonPhotographedWithPerson (
                                                     person1_id STRING(36) NOT NULL,
@@ -115,7 +115,7 @@ def setup_base_schema_and_indexes(db_instance):
                                                     CONSTRAINT fk_photographed_person1 FOREIGN KEY (person1_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                                     CONSTRAINT fk_photographed_person2 FOREIGN KEY (person2_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                                     CHECK (person1_id < person2_id)
-      ) PRIMARY KEY (person1_id, person2_id);
+      ) PRIMARY KEY (person1_id, person2_id)
       ""","""
       CREATE TABLE IF NOT EXISTS PersonRelationships (
                                            person1_id        STRING(36) NOT NULL,
@@ -126,7 +126,7 @@ def setup_base_schema_and_indexes(db_instance):
                                            CONSTRAINT fk_relationship_person1 FOREIGN KEY (person1_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                            CONSTRAINT fk_relationship_person2 FOREIGN KEY (person2_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                            CHECK (person1_id < person2_id)
-      ) PRIMARY KEY (person1_id, person2_id);
+      ) PRIMARY KEY (person1_id, person2_id)
       """,
       # --- 2. Indexes ---
       "CREATE INDEX IF NOT EXISTS IDX_Photo_location_name ON Photo(location_name)",
