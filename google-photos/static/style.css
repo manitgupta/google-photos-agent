@@ -7,12 +7,13 @@
     --border-color: #dadce0;
     --hover-bg-color: #f1f3f4;
     --background-color: #fff;
+    --animation-duration: 0.4s;
 }
 
 .dark-mode {
     --primary-text-color: #e8eaed;
     --secondary-text-color: #9aa0a6;
-    --border-color: #5f6368;
+    --border-color: #3c4043;
     --hover-bg-color: #3c4043;
     --background-color: #202124;
 }
@@ -23,6 +24,19 @@ body {
     background-color: var(--background-color);
     color: var(--primary-text-color);
     transition: background-color 0.3s, color 0.3s;
+}
+
+/* Page Transitions */
+main {
+    padding: 24px;
+    margin-top: var(--header-height);
+    margin-left: 280px;
+    animation: fadeIn var(--animation-duration) ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* Header */
@@ -205,6 +219,7 @@ nav a {
     color: var(--primary-text-color);
     border-radius: 0 25px 25px 0;
     margin-right: 12px;
+    transition: background-color 0.2s ease-in-out;
 }
 
 nav a:hover {
@@ -214,6 +229,7 @@ nav a:hover {
 nav a.active {
     background-color: #e8f0fe;
     color: #1967d2;
+    font-weight: 500;
 }
 
 .dark-mode nav a.active {
@@ -224,13 +240,6 @@ nav a.active {
 nav a i {
     margin-right: 24px;
     font-size: 20px;
-}
-
-/* Main content */
-main {
-    padding: 24px;
-    margin-top: var(--header-height);
-    margin-left: 280px;
 }
 
 /* Photo grid */
@@ -428,6 +437,44 @@ main {
 
 .dark-mode .chat-input button {
     color: #8ab4f8;
+}
+
+/* Loading Spinner */
+.loader {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--hover-bg-color);
+    border-top-color: #1967d2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2000;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    margin-top: 40px;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: var(--secondary-text-color);
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    font-size: 18px;
+    color: var(--secondary-text-color);
 }
 
 /* Media Queries */

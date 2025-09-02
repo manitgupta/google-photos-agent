@@ -7,12 +7,23 @@
 {% endblock %}
 
 {% block content %}
-    <div class="memory-grid">
-        {% for memory in memories %}
-            <div class="memory-card">
-                <h3>{{ memory.title }}</h3>
-                <p>{{ memory.description }}</p>
-            </div>
-        {% endfor %}
-    </div>
+    <h2 style="animation: fadeIn 0.5s ease-in-out;">My Memories</h2>
+
+    {% if memories %}
+        <div class="memory-grid">
+            {% for memory in memories %}
+                <div class="memory-card">
+                    <h3>{{ memory.memory_title }}</h3>
+                    <p>{{ memory.memory_description }}</p>
+                    <small class="timestamp">{{ memory.creation_timestamp|humanize_datetime }}</small>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-book-open"></i>
+            <p>You haven't created any memories yet.</p>
+            <p><a href="{{ url_for('chatbot') }}">Create one with the chatbot!</a></p>
+        </div>
+    {% endif %}
 {% endblock %}

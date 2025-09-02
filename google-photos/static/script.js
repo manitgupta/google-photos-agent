@@ -120,8 +120,15 @@ if (userInput) {
     });
 }
 
-/* Active Nav Link */
+/* Page Load and Nav Link Logic */
 document.addEventListener("DOMContentLoaded", function() {
+    // Hide loader
+    const loader = document.querySelector('.loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+
+    // Active Nav Link
     const links = document.querySelectorAll('.nav-link');
     const currentPath = window.location.pathname;
 
