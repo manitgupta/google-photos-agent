@@ -50,15 +50,26 @@ header {
     flex-grow: 1;
     max-width: 720px;
     margin: 0 32px;
+    position: relative;
+}
+
+.search-bar i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-text-color);
+    z-index: 1;
 }
 
 .search-bar input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 12px 16px 12px 48px;
     border: 1px solid transparent;
     border-radius: 8px;
     background-color: #f1f3f4;
     font-size: 16px;
+    box-sizing: border-box;
 }
 
 .search-bar input:focus {
