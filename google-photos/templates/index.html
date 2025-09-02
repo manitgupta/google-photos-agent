@@ -1,7 +1,30 @@
-<!doctype html>
-<html lang="en">
-    <body>
-        <h1>Google Photos Integration</h1>
-        <p>Welcome to the Google Photos integration page.</p>
-    </body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}My Photos{% endblock %}
+
+{% block content %}
+    {% if user %}
+        <h2>{{ user.name }}'s Photos</h2>
+    {% endif %}
+
+    <div class="photo-grid">
+        {% for photo in photos %}
+            <div class="photo-item">
+                <img src="{{ photo.photo_location }}" alt="Photo by {{ user.name if user else 'user' }}">
+                <div class="photo-overlay">
+                    <div class="people-in-photo">
+                        {% if photo.photo_id in people_in_photos %}
+                            <i class="fas fa-user-friends"></i>
+                            {{ people_in_photos[photo.photo_id]|join(', ') }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="photo-viewer" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="full-photo">
+    </div>
+{% endblock %}

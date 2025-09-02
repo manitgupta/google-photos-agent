@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Chatbot{% endblock %}
+
+{% block content %}
+    <div class="chat-container">
+        <div class="chat-window">
+            <div class="chat-message bot-message">
+                <p>Hello! I'm your Google Photos assistant. How can I help you create a memory today?</p>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="e.g., 'Show me photos from my trip to Goa'">
+            <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+{% endblock %}

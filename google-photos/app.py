@@ -137,7 +137,39 @@ def get_photos_by_person_db(person_id):
     fields = ["photo_id", "timestamp", "location_name", "photo_location"]
     return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
 
+def get_memories_by_user_db(user_id):
+    """Fetch all memories for a user from Spanner."""
+    sql = """
+        SELECT memory_id, memory_title, memory_description, creation_timestamp
+        FROM Memories
+        WHERE user_id = @user_id
+        ORDER BY creation_timestamp DESC
+    """
+    params = {"user_id": user_id}
+    param_types_map = {"user_id": param_types.STRING}
+    fields = ["memory_id", "memory_title", "memory_description", "creation_timestamp"]
+    return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
 
+def get_person_by_id_db(person_id):
+    """Fetch a person's details from Spanner."""
+    sql = "SELECT person_id, name FROM Person WHERE person_id = @person_id"
+    params = {"person_id": person_id}
+    param_types_map = {"person_id": param_types.STRING}
+    fields = ["person_id", "name"]
+    return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
+
+def get_people_in_photos_db(photo_ids):
+    """Fetch all people who appear in a list of photos."""
+    sql = """
+        SELECT pa.photo_id, p.name
+        FROM PersonAppearsInPhoto AS pa
+        JOIN Person AS p ON pa.person_id = p.person_id
+        WHERE pa.photo_id IN UNNEST(@photo_ids)
+    """
+    params = {"photo_ids": photo_ids}
+    param_types_map = {"photo_ids": param_types.Array(param_types.STRING)}
+    fields = ["photo_id", "name"]
+    return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
 
 # --- Custom Jinja Filter ---
 @app.template_filter('humanize_datetime')
@@ -217,24 +249,62 @@ def add_memory_db(memory_id, user_id, memory_title, memory_description):
 
 # --- Routes ---
 @app.route('/')
-def home():
+def index():
     """Home page: Shows all photos owned by a person."""
     all_photos = []
+    user = None
+    people_in_photos = {}
 
     if not db:
         flash("Database connection not available. Cannot load page data.", "danger")
     else:
         try:
+            user_data = get_person_by_id_db(DUMMY_PERSON_ID)
+            if user_data:
+                user = user_data[0]
+
             all_photos = get_photos_by_person_db(DUMMY_PERSON_ID)
+            photo_ids = [photo['photo_id'] for photo in all_photos]
+
+            if photo_ids:
+                people_data = get_people_in_photos_db(photo_ids)
+                for person in people_data:
+                    if person['photo_id'] not in people_in_photos:
+                        people_in_photos[person['photo_id']] = []
+                    people_in_photos[person['photo_id']].append(person['name'])
+
         except Exception as e:
              flash(f"Failed to load page data: {e}", "danger")
-             # Ensure variables are defined even on error
              all_photos = []
+             user = None
+             people_in_photos = {}
 
     return render_template(
         'index.html',
         photos=all_photos,
+        user=user,
+        people_in_photos=people_in_photos
     )
+
+@app.route('/memories')
+def memories():
+    """Memories page: Shows all memories created by a user."""
+    all_memories = []
+    if not db:
+        flash("Database connection not available. Cannot load page data.", "danger")
+    else:
+        try:
+            all_memories = get_memories_by_user_db(DUMMY_PERSON_ID)
+        except Exception as e:
+            flash(f"Failed to load memories: {e}", "danger")
+            all_memories = []
+
+    return render_template('memories.html', memories=all_memories)
+
+@app.route('/chatbot')
+def chatbot():
+    """Chatbot page: Renders the chatbot interface."""
+    return render_template('chatbot.html')
 
 @app.route('/api/memories', methods=['POST'])
 def add_memory_api():
@@ -292,6 +362,18 @@ def add_memory_api():
         traceback.print_exc()
         return jsonify({"error": "An internal server error occurred"}), 500
 
+@app.route('/api/chatbot', methods=['POST'])
+def api_chatbot():
+    """API endpoint for the chatbot."""
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({"error": "Invalid request"}), 400
+
+    user_message = data['message']
+    # TODO: Implement chatbot logic here
+    bot_response = f"I received your message: '{user_message}'. I am still under development."
+
+    return jsonify({"response": bot_response})
 
 if __name__ == '__main__':
     # Check if db connection was successful before running
