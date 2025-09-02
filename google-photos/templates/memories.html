@@ -19,7 +19,7 @@
                     {% if memory.memory_media %}
                         <div class="memory-card-photos">
                             {% for media_url in memory.memory_media %}
-                                <img src="{{ media_url }}" alt="Memory media">
+                                <img src="{{ media_url }}" alt="Memory media" class="memory-photo-thumb">
                             {% endfor %}
                         </div>
                     {% endif %}
@@ -35,4 +35,10 @@
             <p><a href="{{ url_for('chatbot') }}">Create one with the chatbot!</a></p>
         </div>
     {% endif %}
+
+    <!-- Photo Viewer Modal -->
+    <div id="photo-viewer" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="full-photo">
+    </div>
 {% endblock %}

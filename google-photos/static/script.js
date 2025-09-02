@@ -38,19 +38,35 @@ const modal = document.getElementById('photo-viewer');
 
 if (modal) { // Check if modal exists on the page
     const modalImg = document.getElementById('full-photo');
-    const photoItems = document.querySelectorAll('.photo-item');
-    const closeModal = document.querySelector('.close');
+    const closeModal = modal.querySelector('.close');
 
+    // Function to open the modal
+    const openModal = (src) => {
+        modalImg.src = src;
+        modal.style.display = 'block';
+    };
+
+    // --- For Photos Page ---
+    const photoItems = document.querySelectorAll('.photo-item');
     photoItems.forEach(item => {
         item.addEventListener('click', () => {
             const img = item.querySelector('img');
             if (img) {
-                modal.style.display = 'block';
-                modalImg.src = img.src;
+                openModal(img.src);
             }
         });
     });
 
+    // --- For Memories Page ---
+    const memoryPhotoThumbs = document.querySelectorAll('.memory-photo-thumb');
+    memoryPhotoThumbs.forEach(thumb => {
+        thumb.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent card click event if any
+            openModal(thumb.src);
+        });
+    });
+
+    // --- Close Modal Logic ---
     if (closeModal) {
         closeModal.addEventListener('click', () => {
             modal.style.display = 'none';
