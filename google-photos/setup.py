@@ -158,7 +158,7 @@ def setup_graph_definition(db_instance):
               SOURCE KEY (person_id) REFERENCES Person (person_id)
               DESTINATION KEY (photo_id) REFERENCES Photo (photo_id),
 
-            PersonPhotographedWithPerson as PhotosGraphedWith
+            PersonPhotographedWithPerson as PhotographedWith
               SOURCE KEY (person1_id) REFERENCES Person (person_id)
               DESTINATION KEY (person2_id) REFERENCES Person (person_id),
             
