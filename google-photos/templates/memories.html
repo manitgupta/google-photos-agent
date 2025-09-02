@@ -15,6 +15,15 @@
                 <div class="memory-card">
                     <h3>{{ memory.memory_title }}</h3>
                     <p>{{ memory.memory_description }}</p>
+                    
+                    {% if memory.memory_media %}
+                        <div class="memory-card-photos">
+                            {% for media_url in memory.memory_media %}
+                                <img src="{{ media_url }}" alt="Memory media">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
                     <small class="timestamp">{{ memory.creation_timestamp|humanize_datetime }}</small>
                 </div>
             {% endfor %}

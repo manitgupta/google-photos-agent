@@ -353,6 +353,19 @@ nav a i {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.memory-card-photos {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    overflow-x: auto;
+}
+
+.memory-card-photos img {
+    height: 100px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
 /* Chatbot */
 .chat-container {
     max-width: 800px;
