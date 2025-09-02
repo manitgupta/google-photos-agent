@@ -1,8 +1,6 @@
 
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
-from dateutil import parser as dateutil_parser
 import time
 
 from google.cloud import spanner
