@@ -17,15 +17,24 @@
             <i class="fas fa-search"></i>
             <input type="text" placeholder="Search your photos">
         </div>
-        <div class="user-profile">
-            <img src="{{ url_for('static', filename='rohan.png') }}" alt="User">
+        <div class="header-right">
+            <div class="dark-mode-toggle">
+                <input type="checkbox" id="dark-mode-checkbox">
+                <label for="dark-mode-checkbox">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </label>
+            </div>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='rohan.png') }}" alt="User">
+            </div>
         </div>
     </header>
     <nav>
         <ul>
-            <li><a href="{{ url_for('index') }}"><i class="fas fa-photo-video"></i> Photos</a></li>
-            <li><a href="{{ url_for('memories') }}"><i class="fas fa-history"></i> Memories</a></li>
-            <li><a href="{{ url_for('chatbot') }}"><i class="fas fa-robot"></i> Generate memory</a></li>
+            <li><a href="{{ url_for('index') }}" class="nav-link"><i class="fas fa-photo-video"></i> <span>Photos</span></a></li>
+            <li><a href="{{ url_for('memories') }}" class="nav-link"><i class="fas fa-history"></i> <span>Memories</span></a></li>
+            <li><a href="{{ url_for('chatbot') }}" class="nav-link"><i class="fas fa-robot"></i> <span>Generate memory</span></a></li>
         </ul>
     </nav>
     <main>

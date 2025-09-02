@@ -1,15 +1,53 @@
+/* Dark Mode Toggle */
+const darkModeToggle = document.getElementById('dark-mode-checkbox');
+const body = document.body;
+
+const enableDarkMode = () => {
+    body.classList.add('dark-mode');
+    if(darkModeToggle) darkModeToggle.checked = true;
+    localStorage.setItem('darkMode', 'enabled');
+}
+
+const disableDarkMode = () => {
+    body.classList.remove('dark-mode');
+    if(darkModeToggle) darkModeToggle.checked = false;
+    localStorage.setItem('darkMode', 'disabled');
+}
+
+// Check for saved preference on page load
+if (localStorage.getItem('darkMode') === 'enabled') {
+    enableDarkMode();
+} else if (localStorage.getItem('darkMode') === 'disabled') {
+    disableDarkMode();
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    enableDarkMode();
+}
+
+if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', () => {
+        if (darkModeToggle.checked) {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
+    });
+}
+
 /* Photo viewer modal */
 const modal = document.getElementById('photo-viewer');
 
 if (modal) { // Check if modal exists on the page
     const modalImg = document.getElementById('full-photo');
-    const photoItems = document.querySelectorAll('.photo-item img');
+    const photoItems = document.querySelectorAll('.photo-item');
     const closeModal = document.querySelector('.close');
 
     photoItems.forEach(item => {
         item.addEventListener('click', () => {
-            modal.style.display = 'block';
-            modalImg.src = item.src;
+            const img = item.querySelector('img');
+            if (img) {
+                modal.style.display = 'block';
+                modalImg.src = img.src;
+            }
         });
     });
 
@@ -19,14 +57,12 @@ if (modal) { // Check if modal exists on the page
         });
     }
 
-    // Also close modal on clicking outside the image
     window.addEventListener('click', (event) => {
         if (event.target == modal) {
             modal.style.display = 'none';
         }
     });
 }
-
 
 /* Chatbot */
 const sendBtn = document.getElementById('send-btn');
@@ -36,17 +72,14 @@ const chatWindow = document.querySelector('.chat-window');
 function sendMessage() {
     const userMessage = userInput.value.trim();
     if (userMessage && chatWindow) {
-        // Display user message
         const userMessageDiv = document.createElement('div');
         userMessageDiv.classList.add('chat-message', 'user-message');
         userMessageDiv.innerHTML = `<p>${userMessage}</p>`;
         chatWindow.appendChild(userMessageDiv);
         chatWindow.scrollTop = chatWindow.scrollHeight;
 
-        // Clear input
         userInput.value = '';
 
-        // Send to backend and get response
         fetch('/api/chatbot', {
             method: 'POST',
             headers: {
@@ -86,3 +119,15 @@ if (userInput) {
         }
     });
 }
+
+/* Active Nav Link */
+document.addEventListener("DOMContentLoaded", function() {
+    const links = document.querySelectorAll('.nav-link');
+    const currentPath = window.location.pathname;
+
+    links.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+});
