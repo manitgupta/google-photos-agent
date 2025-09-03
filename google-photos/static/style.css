@@ -113,6 +113,11 @@ header {
     align-items: center;
 }
 
+.user-profile {
+    display: flex;
+    align-items: center;
+}
+
 .user-profile img {
     height: 40px;
     border-radius: 50%;

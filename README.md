@@ -62,6 +62,28 @@ set -gx GOOGLE_GENAI_USE_VERTEXAI TRUE
 set -gx GOOGLE_CLOUD_LOCATION "us-central1"
 ```
 
+### Service Account Credentials
+
+To generate signed URLs for Google Cloud Storage, the application needs a service account key.
+
+1.  **Create a service account key:**
+
+    ```bash
+    gcloud iam service-accounts keys create ~/key.json --iam-account=$(gcloud iam service-accounts list --filter='displayName="Compute Engine default service account"' --format='value(email)')
+    ```
+
+2.  **Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable:**
+
+    **For bash:**
+    ```bash
+    export GOOGLE_APPLICATION_CREDENTIALS=~/key.json
+    ```
+
+    **For fish:**
+    ```fish
+    set -gx GOOGLE_APPLICATION_CREDENTIALS ~/key.json
+    ```
+
 ### Enable permissions
 
 ```
@@ -108,6 +130,11 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
   --role="roles/logging.viewer"
+
+# Storage Admin (to create buckets)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
+  --role="roles/storage.admin"
 
 ```
 
@@ -164,6 +191,8 @@ pip install -r requirements.txt
 cd google-photos
 python setup.py
 ```
+
+The `setup.py` script will also create a Google Cloud Storage bucket named `photos-<YOUR-PROJECT-ID>`, upload a sample image, and grant the application's service account the necessary permissions to view the images in the bucket.
 
 or for fish terminal 
 

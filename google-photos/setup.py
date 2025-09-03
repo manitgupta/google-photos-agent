@@ -4,7 +4,9 @@ import uuid
 import time
 
 from google.cloud import spanner
+from google.cloud import storage
 from google.api_core import exceptions
+from google.cloud.exceptions import Conflict
 
 # --- Configuration ---
 INSTANCE_ID = os.environ.get("SPANNER_INSTANCE_ID","google-photos-instance")
@@ -29,6 +31,25 @@ except exceptions.NotFound:
 except Exception as e:
   print(f"Error initializing Spanner client: {e}")
   spanner_client = None; instance = None; database = None
+
+def upload_blob(bucket_name, source_file_name, destination_blob_name):
+    """Uploads a file to the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    blob.upload_from_filename(source_file_name)
+
+    print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+
+def create_bucket(bucket_name):
+    """Creates a new bucket. Handles cases where the bucket already exists."""
+    storage_client = storage.Client()
+    try:
+        bucket = storage_client.create_bucket(bucket_name)
+        print(f"Bucket {bucket.name} created.")
+    except Conflict:
+        print(f"Bucket {bucket_name} already exists.")
 
 def run_ddl_statements(db_instance, ddl_list, operation_description):
   """Helper function to run DDL statements and handle potential errors."""
@@ -72,16 +93,19 @@ def setup_base_schema_and_indexes(db_instance):
       """
       CREATE TABLE IF NOT EXISTS Person (
                               person_id STRING(36) NOT NULL,
-                              name      STRING(MAX)
+                              name      STRING(MAX),
+                              photo_location STRING(MAX) 
       ) PRIMARY KEY (person_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS Photo (
                              photo_id       STRING(36) NOT NULL,
                              timestamp      TIMESTAMP,
                              location_name  STRING(MAX),
                              photo_location STRING(MAX)
       ) PRIMARY KEY (photo_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS Memories (
                                 memory_id          STRING(36) NOT NULL,
                                 user_id            STRING(36) NOT NULL,
@@ -91,21 +115,24 @@ def setup_base_schema_and_indexes(db_instance):
                                 creation_timestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
                                 CONSTRAINT fk_memories_user FOREIGN KEY (user_id) REFERENCES Person (person_id) ON DELETE CASCADE
       ) PRIMARY KEY (memory_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS PersonOwnsPhoto (
                                        person_id STRING(36) NOT NULL,
                                        photo_id  STRING(36) NOT NULL,
                                        CONSTRAINT fk_owns_person FOREIGN KEY (person_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                        CONSTRAINT fk_owns_photo FOREIGN KEY (photo_id) REFERENCES Photo (photo_id) ON DELETE CASCADE
       ) PRIMARY KEY (person_id, photo_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS PersonAppearsInPhoto (
                                             person_id STRING(36) NOT NULL,
                                             photo_id  STRING(36) NOT NULL,
                                             CONSTRAINT fk_appears_person FOREIGN KEY (person_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                             CONSTRAINT fk_appears_photo FOREIGN KEY (photo_id) REFERENCES Photo (photo_id) ON DELETE CASCADE
       ) PRIMARY KEY (person_id, photo_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS PersonPhotographedWithPerson (
                                                     person1_id STRING(36) NOT NULL,
                                                     person2_id STRING(36) NOT NULL,
@@ -115,7 +142,8 @@ def setup_base_schema_and_indexes(db_instance):
                                                     CONSTRAINT fk_photographed_person2 FOREIGN KEY (person2_id) REFERENCES Person (person_id) ON DELETE CASCADE,
                                                     CHECK (person1_id < person2_id)
       ) PRIMARY KEY (person1_id, person2_id)
-      ""","""
+      """,
+      """
       CREATE TABLE IF NOT EXISTS PersonRelationships (
                                            person1_id        STRING(36) NOT NULL,
                                            person2_id        STRING(36) NOT NULL,
@@ -183,15 +211,37 @@ def insert_relational_data(db_instance):
         return False
     print("\n--- Inserting Curated Data for Relational Tables ---")
 
+    BUCKET_NAME = f"photos-{PROJECT_ID}"
+    SERVICE_ACCOUNT_NAME = os.environ.get("SERVICE_ACCOUNT_NAME")
+
+    try:
+        create_bucket(BUCKET_NAME)
+    except Exception as e:
+        print(f"Warning: Could not create bucket {BUCKET_NAME}. It might already exist or there's a permissions issue: {e}")
+
+    upload_blob(BUCKET_NAME, "static/goa.jpeg", "goa.jpeg")
+    upload_blob(BUCKET_NAME, "static/priya.jpeg", "priya.jpeg")
+    upload_blob(BUCKET_NAME, "static/vikram.jpeg", "vikram.jpeg")
+    upload_blob(BUCKET_NAME, "static/maya.jpeg", "maya.jpeg")
+    upload_blob(BUCKET_NAME, "static/anjali.jpeg", "anjali.jpeg")
+    upload_blob(BUCKET_NAME, "static/sameer.jpeg", "sameer.jpeg")
+    upload_blob(BUCKET_NAME, "static/rohan.jpeg", "rohan.jpeg")
+    upload_blob(BUCKET_NAME, "static/bruno.jpeg", "bruno.jpeg")
+    upload_blob(BUCKET_NAME, "static/zara.jpeg", "zara.jpeg")
+    upload_blob(BUCKET_NAME, "static/city_park.jpeg", "city_park.jpeg")
+    upload_blob(BUCKET_NAME, "static/college.jpeg", "college.jpeg")
+    upload_blob(BUCKET_NAME, "static/home.jpeg", "home.jpeg")
+
+
     person_rows = [
-        {'person_id': 'p01', 'name': 'Rohan'},
-        {'person_id': 'p02', 'name': 'Priya'},
-        {'person_id': 'p03', 'name': 'Vikram'},
-        {'person_id': 'p04', 'name': 'Maya'},
-        {'person_id': 'p05', 'name': 'Anjali'},
-        {'person_id': 'p06', 'name': 'Sameer'},
-        {'person_id': 'p07', 'name': 'Bruno'},
-        {'person_id': 'p08', 'name': 'Zara'},
+        {'person_id': 'p01', 'name': 'Rohan', 'photo_location': f'gs://{BUCKET_NAME}/rohan.jpeg'},
+        {'person_id': 'p02', 'name': 'Priya', 'photo_location': f'gs://{BUCKET_NAME}/priya.jpeg'},
+        {'person_id': 'p03', 'name': 'Vikram', 'photo_location': f'gs://{BUCKET_NAME}/vikram.jpeg'},
+        {'person_id': 'p04', 'name': 'Maya', 'photo_location': f'gs://{BUCKET_NAME}/maya.jpeg'},
+        {'person_id': 'p05', 'name': 'Anjali', 'photo_location': f'gs://{BUCKET_NAME}/anjali.jpeg'},
+        {'person_id': 'p06', 'name': 'Sameer', 'photo_location': f'gs://{BUCKET_NAME}/sameer.jpeg'},
+        {'person_id': 'p07', 'name': 'Bruno', 'photo_location': f'gs://{BUCKET_NAME}/bruno.jpeg'},
+        {'person_id': 'p08', 'name': 'Zara', 'photo_location': f'gs://{BUCKET_NAME}/zara.jpeg'},
     ]
 
     person_relationships_rows = [
@@ -207,12 +257,12 @@ def insert_relational_data(db_instance):
     ]
 
     photo_rows = [
-        {'photo_id': 'ph01', 'timestamp': '2023-11-20T13:30:00Z', 'location_name': 'Goa, India', 'photo_location': 'gcs://my-photos-bucket/ph01.jpg'},
-        {'photo_id': 'ph02', 'timestamp': '2021-11-04T20:00:00Z', 'location_name': 'Home, Delhi', 'photo_location': 'gcs://my-photos-bucket/ph02.jpg'},
-        {'photo_id': 'ph03', 'timestamp': '2025-04-12T09:15:00Z', 'location_name': 'City Park', 'photo_location': 'gcs://my-photos-bucket/ph03.jpg'},
-        {'photo_id': 'ph04', 'timestamp': '2018-02-18T16:45:00Z', 'location_name': 'College Campus', 'photo_location': 'gcs://my-photos-bucket/ph04.jpg'},
-        {'photo_id': 'ph05', 'timestamp': '2024-07-26T11:50:00Z', 'location_name': 'Himalayan Trek', 'photo_location': 'gcs://my-photos-bucket/ph05.jpg'},
-        {'photo_id': 'ph06', 'timestamp': '2025-01-15T19:30:00Z', 'location_name': 'Home, Delhi', 'photo_location': 'gcs://my-photos-bucket/ph06.jpg'},
+        {'photo_id': 'ph01', 'timestamp': '2023-11-20T13:30:00Z', 'location_name': 'Goa, India', 'photo_location': f'gs://{BUCKET_NAME}/goa.jpeg'},
+        {'photo_id': 'ph02', 'timestamp': '2021-11-04T20:00:00Z', 'location_name': 'Home, Delhi', 'photo_location': f'gs://{BUCKET_NAME}/home.jpeg'},
+        {'photo_id': 'ph03', 'timestamp': '2025-04-12T09:15:00Z', 'location_name': 'City Park', 'photo_location': f'gs://{BUCKET_NAME}/city_park.jpeg'},
+        {'photo_id': 'ph04', 'timestamp': '2018-02-18T16:45:00Z', 'location_name': 'College Campus', 'photo_location': f'gs://{BUCKET_NAME}/college.jpeg'},
+        {'photo_id': 'ph05', 'timestamp': '2024-07-26T11:50:00Z', 'location_name': 'Himalayan Trek', 'photo_location': f'gs://{BUCKET_NAME}/himalaya.jpeg'},
+        {'photo_id': 'ph06', 'timestamp': '2025-01-15T19:30:00Z', 'location_name': 'Home, Delhi', 'photo_location': f'gs://{BUCKET_NAME}/diwali.jpeg'},
     ]
 
     person_owns_photo_rows = [
@@ -249,12 +299,12 @@ def insert_relational_data(db_instance):
     ]
 
     memories_rows = [
-        {'memory_id': 'mem01', 'user_id': 'p01', 'memory_title': 'Unforgettable Goa Trip!', 'memory_description': 'That amazing trip to Goa with Anjali and Sameer back in 2023. The beaches were incredible!', 'creation_timestamp': '2024-01-15T22:00:00Z', 'memory_media': ['gcs://my-photos-bucket/ph01.jpg']},
-        {'memory_id': 'mem02', 'user_id': 'p01', 'memory_title': 'Diwali 2021', 'memory_description': 'A beautiful Diwali night with the whole family at home. Everyone looks so happy.', 'creation_timestamp': '2022-05-20T15:30:00Z', 'memory_media': ['gcs://my-photos-bucket/ph02.jpg']},
+        {'memory_id': 'mem01', 'user_id': 'p01', 'memory_title': 'Unforgettable Goa Trip!', 'memory_description': 'That amazing trip to Goa with Anjali and Sameer back in 2023. The beaches were incredible!', 'creation_timestamp': '2024-01-15T22:00:00Z', 'memory_media': [f'gs://{BUCKET_NAME}/goa.jpeg']},
+        {'memory_id': 'mem02', 'user_id': 'p01', 'memory_title': 'Diwali 2021', 'memory_description': 'A beautiful Diwali night with the whole family at home. Everyone looks so happy.', 'creation_timestamp': '2022-05-20T15:30:00Z', 'memory_media': [f'gs://{BUCKET_NAME}/delhi.png']},
     ]
 
     def insert_data_txn(transaction):
-        transaction.insert("Person", columns=("person_id", "name"), values=[(r["person_id"], r["name"]) for r in person_rows])
+        transaction.insert("Person", columns=("person_id", "name", "photo_location"), values=[(r["person_id"], r["name"], r["photo_location"]) for r in person_rows]) 
         transaction.insert("PersonRelationships", columns=("person1_id", "person2_id", "relationship_type", "status", "created_at"), values=[(r["person1_id"], r["person2_id"], r["relationship_type"], r["status"], r["created_at"]) for r in person_relationships_rows])
         transaction.insert("Photo", columns=("photo_id", "timestamp", "location_name", "photo_location"), values=[(r["photo_id"], r["timestamp"], r["location_name"], r["photo_location"]) for r in photo_rows])
         transaction.insert("PersonOwnsPhoto", columns=("person_id", "photo_id"), values=[(r["person_id"], r["photo_id"]) for r in person_owns_photo_rows])
@@ -310,7 +360,7 @@ if __name__ == "__main__":
     print("\nScript finished with errors during data insertion.")
     exit(1)
 
-  end_time = time.time()
+  end_time = time.time() 
   print("\n-----------------------------------------")
   print("Script finished successfully!")
   print(f"Database '{DATABASE_ID}' on instance '{INSTANCE_ID}' has been set up with the relational schema and populated.")

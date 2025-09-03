@@ -1,11 +1,12 @@
 import os
 import uuid
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from flask import Flask, render_template, flash, request, jsonify
 import humanize
 from dateutil import parser
+from google.cloud import storage
 
 # Import database functions from db.py
 import db
@@ -17,6 +18,28 @@ DUMMY_PERSON_ID = "p01"
 load_dotenv()
 APP_HOST = os.environ.get("APP_HOST", "0.0.0.0")
 APP_PORT = os.environ.get("APP_PORT", "8080")
+
+# --- Initialize Google Cloud Storage Client ---
+storage_client = storage.Client()
+
+def generate_signed_url(gcs_uri):
+    """Generates a signed URL for a GCS object."""
+    if not gcs_uri or not gcs_uri.startswith("gs://"):
+        return None
+    try:
+        bucket_name, blob_name = gcs_uri.replace("gs://", "").split("/", 1)
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        # Generate a URL that is valid for 1 hour
+        signed_url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(minutes=60),
+            method="GET",
+        )
+        return signed_url
+    except Exception as e:
+        app.logger.error(f"Failed to generate signed URL for {gcs_uri}: {e}")
+        return None
 
 # --- Custom Jinja Filter ---
 @app.template_filter('humanize_datetime')
@@ -72,8 +95,14 @@ def index():
             user_data = db.get_person_by_id_db(DUMMY_PERSON_ID)
             if user_data:
                 user = user_data[0]
+                if user.get('photo_location'):
+                    user['photo_location'] = generate_signed_url(user['photo_location'])
+                    print(f"Generated signed URL for photo {user['person_id']}: {user['photo_location']}")
 
             all_photos = db.get_photos_by_person_db(DUMMY_PERSON_ID)
+            for photo in all_photos:
+                photo['photo_location'] = generate_signed_url(photo['photo_location'])
+
             photo_ids = [photo['photo_id'] for photo in all_photos]
 
             if photo_ids:
@@ -105,6 +134,14 @@ def memories():
     else:
         try:
             all_memories = db.get_memories_by_user_db(DUMMY_PERSON_ID)
+            for memory in all_memories:
+                if memory.get('memory_media'):
+                    signed_media = []
+                    for media_uri in memory['memory_media']:
+                        signed_url = generate_signed_url(media_uri)
+                        if signed_url:
+                            signed_media.append(signed_url)
+                    memory['memory_media'] = signed_media
         except Exception as e:
             flash(f"Failed to load memories: {e}", "danger")
             all_memories = []

@@ -124,10 +124,10 @@ def get_memories_by_user_db(user_id):
 
 def get_person_by_id_db(person_id):
     """Fetch a person's details from Spanner."""
-    sql = "SELECT person_id, name FROM Person WHERE person_id = @person_id"
+    sql = "SELECT person_id, name, photo_location FROM Person WHERE person_id = @person_id"
     params = {"person_id": person_id}
     param_types_map = {"person_id": param_types.STRING}
-    fields = ["person_id", "name"]
+    fields = ["person_id", "name", "photo_location"]
     return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
 
 def get_people_in_photos_db(photo_ids):

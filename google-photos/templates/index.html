@@ -8,7 +8,10 @@
 
 {% block content %}
     {% if user %}
-        <h2 style="animation: fadeIn 0.5s ease-in-out;">{{ user.name }}'s Photos</h2>
+        <div class="user-profile">
+            <img src="{{ user.photo_location }}" alt="{{ user.name }}'s profile picture" class="profile-pic">
+            <h2 style="animation: fadeIn 0.5s ease-in-out;">{{ user.name }}'s Photos</h2>
+        </div>
     {% endif %}
 
     {% if photos %}
