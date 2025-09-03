@@ -63,34 +63,59 @@ if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
 else
   echo "Exported SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME"
 fi
-# 6. Export SPANNER_INSTANCE_ID
+
+# 6. Create Service Account Key
+if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
+  echo "Error: SERVICE_ACCOUNT_NAME is not set. Cannot create a key."
+  return 1
+fi
+
+KEY_FILE=~/key.json
+
+echo "Checking for existing key file at $KEY_FILE..."
+if [ -f "$KEY_FILE" ]; then
+  echo "Deleting existing key file..."
+  rm "$KEY_FILE"
+fi
+
+echo "Creating new service account key..."
+gcloud iam service-accounts keys create "$KEY_FILE" --iam-account="$SERVICE_ACCOUNT_NAME"
+
+# 7. Copy key to google-photos directory
+cp $KEY_FILE google-photos/key.json
+
+# 8. Export GOOGLE_APPLICATION_CREDENTIALS
+export GOOGLE_APPLICATION_CREDENTIALS="$KEY_FILE"
+echo "Exported GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+
+# 9. Export SPANNER_INSTANCE_ID
 # Use the variable defined in the configuration section
 export SPANNER_INSTANCE_ID="$SPANNER_INSTANCE_ID"
 echo "Exported SPANNER_INSTANCE_ID=$SPANNER_INSTANCE_ID"
 
-# 7. Export SPANNER_DATABASE_ID
+# 10. Export SPANNER_DATABASE_ID
 # Use the variable defined in the configuration section
 export SPANNER_DATABASE_ID="$SPANNER_DATABASE_ID"
 echo "Exported SPANNER_DATABASE_ID=$SPANNER_DATABASE_ID"
 
-# 8. Export GOOGLE_CLOUD_PROJECT (Often used by client libraries)
+# 11. Export GOOGLE_CLOUD_PROJECT (Often used by client libraries)
 # This is usually the same as PROJECT_ID
 export GOOGLE_CLOUD_PROJECT="$PROJECT_ID"
 echo "Exported GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT"
 
-# 9. Export GOOGLE_GENAI_USE_VERTEXAI
+# 12. Export GOOGLE_GENAI_USE_VERTEXAI
 export GOOGLE_GENAI_USE_VERTEXAI="TRUE"
 echo "Exported GOOGLE_GENAI_USE_VERTEXAI=$GOOGLE_GENAI_USE_VERTEXAI"
 
-# 10. Export GOOGLE_CLOUD_LOCATION
+# 13. Export GOOGLE_CLOUD_LOCATION
 export GOOGLE_CLOUD_LOCATION="$GOOGLE_CLOUD_LOCATION"
 echo "Exported GOOGLE_CLOUD_LOCATION=$GOOGLE_CLOUD_LOCATION"
 
-# 11. Export REPO_NAME
+# 14. Export REPO_NAME
 export REPO_NAME="$REPO_NAME"
 echo "Exported REPO_NAME=$REPO_NAME"
 
-# 12. Export REGION
+# 15. Export REGION
 export REGION="$GOOGLE_CLOUD_LOCATION"
 echo "Exported REGION=$GOOGLE_CLOUD_LOCATION"
 

@@ -31,6 +31,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars="APP_PORT=8080" \
   --set-env-vars="GOOGLE_CLOUD_LOCATION=${REGION}" \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
+  --set-env-vars="GOOGLE_APPLICATION_CREDENTIALS=/app/key.json" \
   --project=${PROJECT_ID} \
   --min-instances=1
 

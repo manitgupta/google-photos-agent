@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Application Code ---
 COPY . /app
+COPY key.json /app/key.json
 
 # --- Environment ---
 ENV PYTHONPATH=/app
