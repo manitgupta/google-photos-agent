@@ -62,14 +62,16 @@ set -gx GOOGLE_GENAI_USE_VERTEXAI TRUE
 set -gx GOOGLE_CLOUD_LOCATION "us-central1"
 ```
 
-### Service Account Credentials
+### Service Account Credentials (for Local Development Only)
 
-To generate signed URLs for Google Cloud Storage, the application needs a service account key.
+**Note:** This step is **not required** for the Cloud Run deployment. It is only needed if you want to run the application directly on your local machine (e.g., `python app.py`). The Cloud Run service automatically uses the attached service account identity.
+To generate signed URLs for Google Cloud Storage when running locally, the application needs a service account key.
 
 1.  **Create a service account key:**
 
     ```bash
-    gcloud iam service-accounts keys create ~/key.json --iam-account=$(gcloud iam service-accounts list --filter='displayName="Compute Engine default service account"' --format='value(email)')
+    # Ensure you have sourced the set_env.sh script or exported the variables first.
+    gcloud iam service-accounts keys create ~/key.json --iam-account="$SERVICE_ACCOUNT_NAME"
     ```
 
 2.  **Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable:**
@@ -207,3 +209,14 @@ python setup.py
 ```
 
 Note: Verify if `set_env.sh` has correctly set the environment variables!
+
+### Deploy to Cloud Run
+
+With the infrastructure and data in place, run the deployment script. This will build the application container using Cloud Build and deploy it as a **public** service on Cloud Run.
+
+```bash
+cd ~/google-photos-agent
+./deploy.sh
+```
+
+After the script completes, it will output the public URL for your running application.

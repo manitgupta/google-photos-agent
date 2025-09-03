@@ -55,8 +55,14 @@ echo "Exported PROJECT_NUMBER=$PROJECT_NUMBER"
 
 # 5. Export SERVICE_ACCOUNT_NAME (Default Compute Service Account)
 export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
-echo "Exported SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME"
-
+if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
+  echo "Error: Could not determine the default Compute Engine service account."
+  echo "This can happen if the Compute Engine API has not been used in this project yet."
+  echo "Please try enabling the API and waiting a few minutes, or create a dedicated service account."
+  return 1
+else
+  echo "Exported SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME"
+fi
 # 6. Export SPANNER_INSTANCE_ID
 # Use the variable defined in the configuration section
 export SPANNER_INSTANCE_ID="$SPANNER_INSTANCE_ID"

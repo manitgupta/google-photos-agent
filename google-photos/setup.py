@@ -6,6 +6,7 @@ import time
 from google.cloud import spanner
 from google.cloud import storage
 from google.api_core import exceptions
+from google.auth import default as google_auth_default
 from google.cloud.exceptions import Conflict
 
 # --- Configuration ---
@@ -13,6 +14,18 @@ INSTANCE_ID = os.environ.get("SPANNER_INSTANCE_ID","google-photos-instance")
 DATABASE_ID = os.environ.get("SPANNER_DATABASE_ID","google-photos")
 
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
+
+# --- Diagnostic: Check active credentials ---
+try:
+    credentials, project_id = google_auth_default()
+    if hasattr(credentials, 'service_account_email'):
+        print(f"✅ Authenticated using Service Account: {credentials.service_account_email}")
+    else:
+        print("⚠️  Authenticated using user credentials (not a Service Account).")
+        print("   This script should run as a service account. Check if GOOGLE_APPLICATION_CREDENTIALS is set correctly.")
+except Exception as e:
+    print(f"❌ Could not determine authentication credentials: {e}")
+
 
 # --- Spanner Client Initialization ---
 try:
