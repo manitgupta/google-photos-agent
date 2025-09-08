@@ -14,8 +14,17 @@
         </div>
     {% endif %}
 
-    {% if photos %}
-        <div class="photo-grid">
+    <!-- Search Bar Form -->
+    <div class="search-container">
+        <form id="search-form" class="search-form">
+            <input type="text" id="search-input" name="query" placeholder="Search for photos of people, places, and more..." class="search-input">
+            <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+
+    <!-- Container for search results -->
+    <div id="photo-grid" class="photo-grid">
+        {% if photos %}
             {% for photo in photos %}
                 <div class="photo-item">
                     <img src="{{ photo.photo_location }}" alt="Photo by {{ user.name if user else 'user' }}">
@@ -29,16 +38,93 @@
                     </div>
                 </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <i class="fas fa-image"></i>
-            <p>No photos yet. Your uploaded photos will appear here.</p>
-        </div>
-    {% endif %}
+        {% else %}
+            <div id="empty-state" class="empty-state">
+                <i class="fas fa-image"></i>
+                <p>No photos yet. Your uploaded photos will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
 
     <div id="photo-viewer" class="modal">
         <span class="close">&times;</span>
         <img class="modal-content" id="full-photo">
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const photoGrid = document.getElementById('photo-grid');
+
+        searchForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const query = searchInput.value.trim();
+
+            if (!query) return;
+
+            // Add a loading indicator
+            photoGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
+
+            try {
+                const response = await fetch('{{ url_for("api_chatbot") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const photos = data.photo_results;
+
+                // Clear the grid before adding new photos
+                photoGrid.innerHTML = '';
+
+                if (photos && photos.length > 0) {
+                    photos.forEach(photo => {
+                        const photoItem = document.createElement('div');
+                        photoItem.className = 'photo-item';
+
+                        const img = document.createElement('img');
+                        // Use the signed URL from the agent's response
+                        img.src = photo.photo_url;
+                        img.alt = `Photo at ${photo.location_name}`;
+
+                        const overlay = document.createElement('div');
+                        overlay.className = 'photo-overlay';
+                        // Note: People-in-photo data is not available from the agent, so we omit it.
+
+                        photoItem.appendChild(img);
+                        photoItem.appendChild(overlay);
+                        photoGrid.appendChild(photoItem);
+                    });
+                } else {
+                    // Display a 'no results' message
+                    photoGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>No photos found for your search: "${query}"</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Search failed:', error);
+                photoGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>An error occurred during the search. Please try again.</p>
+                    </div>
+                `;
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -2,9 +2,16 @@
 import traceback
 from google.cloud.spanner_v1 import param_types
 
-from adk import Agent, tool
+# Updated ADK imports to include Model
+from adk import Agent, Model, tool
 from .. import db  # Use relative import to access the db module
 
+SPANNER_TYPES = {
+    "STRING": param_types.STRING,
+    "INT64": param_types.INT64,
+    "TIMESTAMP": param_types.TIMESTAMP
+    # Add other types as needed
+}
 # --- Tool Definition ---
 
 @tool
@@ -26,18 +33,17 @@ def execute_graph_query(query: str, params: dict = None, param_types_map: dict =
 
     # Convert string param types to actual spanner types
     if param_types_map:
-        for key, value in param_types_map.items():
-            if value == "STRING":
-                param_types_map[key] = param_types.STRING
-            # Add other type conversions if needed, e.g., INT64, TIMESTAMP
+        converted_types = {k: SPANNER_TYPES.get(v) for k, v in param_types_map.items()}
+    else: converted_types = None # Initialize as None if no map, to avoid passing empty dict
 
     try:
-        # We don't know the expected fields beforehand, so we let run_query figure it out
         results = db.run_query(
             query,
             params=params,
-            param_types=param_types_map,
-            expected_fields=None  # Let run_query determine fields from results
+            # Pass converted_types only if param_types_map was provided and resulted in non-empty converted_types
+            # This handles cases where param_types_map is None or empty, ensuring converted_types is not passed if it's empty, or is an empty dict
+            param_types=converted_types,
+            expected_fields=None
         )
         return results
     except Exception as e:
@@ -48,62 +54,76 @@ def execute_graph_query(query: str, params: dict = None, param_types_map: dict =
 
 # --- Agent Definition ---
 
-# This is the core of the "Text-to-Query" agent. The system prompt is crucial.
+# 2. Update the Agent constructor with the new parameters
 TEXT_TO_QUERY_AGENT = Agent(
-    system_instruction="""You are an expert Spanner graph query writer. Your task is to understand a user's natural language request and convert it into a valid, read-only Spanner graph query.
+    name="SocialProfilingAgent",
+    description="An agent that understands natural language and converts it into Spanner graph queries.",
+    model=Model("gemini-2.5-pro-latest"),
+    system_instruction="""You are an expert Spanner graph query writer. Your task is to understand a user's natural language request and convert it into a valid, read-only Spanner graph query based on the official schema below.
 
-**Database Schema: `PhotosGraph`**
-
-You have access to a Spanner property graph named `PhotosGraph` with the following schema:
+**Official Database Schema: `PhotosGraph`**
 
 *   **NODE TABLES:**
-    *   `Person(person_id: STRING, name: STRING)`
-    *   `Photo(photo_id: STRING, timestamp: TIMESTAMP, location_name: STRING, photo_location: STRING)`
+    *   `Person` (Properties: `person_id: STRING`, `name: STRING`, `photo_location: STRING`)
+    *   `Photo` (Properties: `photo_id: STRING`, `timestamp: TIMESTAMP`, `location_name: STRING`, `photo_location: STRING`)
 
 *   **EDGE TABLES:**
-    *   `AppearsIn(SOURCE: Person, DESTINATION: Photo)`
-    *   `Owns(SOURCE: Person, DESTINATION: Photo)`
-    *   `PhotographedWith(SOURCE: Person, DESTINATION: Person)`
-    *   `RelationShip(SOURCE: Person, DESTINATION: Person)`
+     *   `Owns`
+         *   Connects: `(Person) -> (Photo)`
+         *   Underlying Table: `PersonOwnsPhoto`
+     *   `AppearsIn`
+         *   Connects: `(Person) -> (Photo)`
+         *   Underlying Table: `PersonAppearsInPhoto`
+     *   `PhotographedWith`
+         *   Connects: `(Person) -> (Person)`
+         *   Underlying Table: `PersonPhotographedWithPerson`
+         *   Properties: `frequency: INT64`, `last_seen: TIMESTAMP`
+     *   `RelationShip`
+         *   Connects: `(Person) -> (Person)`
+         *   Underlying Table: `PersonRelationships`
+         *   Properties: `relationship_type: STRING`, `status: STRING`, `created_at: TIMESTAMP`
 
 **Your Task:**
 
 1.  **Analyze the user's request** to identify people, locations, and relationships.
-2.  **Construct a single, valid Spanner graph `SELECT` query** to find the requested photos.
-3.  **Call the `execute_graph_query` tool** with the generated query string and any necessary parameters.
-4.  **Return ONLY the query results** to the user in a clear format. Do not add conversational text unless the query fails.
+2.  **Construct a single, valid Spanner graph `SELECT` query**.
+3.  **Call the `execute_graph_query` tool** with the generated query and parameters.
+4.  **Return ONLY the query results** to the user.
 
-**Rules & Guardrails (VERY IMPORTANT):**
+**Rules & Guardrails:**
 
-1.  **READ-ONLY:** You MUST only generate `SELECT` statements. Any other command (INSERT, UPDATE, DELETE, DROP, etc.) is strictly forbidden.
-2.  **GRAPH SYNTAX:** All queries MUST use the `FROM GRAPH PhotosGraph` clause.
-3.  **MATCH Clause:** Use the `MATCH` clause for graph pattern matching.
-    *   Example: `MATCH (person:Person)-[:AppearsIn]->(photo:Photo)`
-4.  **Parameterize Inputs:** ALWAYS use parameters (`@param_name`) for user-provided values (like names or locations) to prevent injection attacks.
-    *   Provide the parameters in the `params` dictionary.
-    *   Provide the parameter types in the `param_types_map` dictionary (e.g., `{"name1": "STRING"}`).
-5.  **Location Filtering:** For location searches, use the `LIKE` operator for partial matches (e.g., `photo.location_name LIKE @location`).
-6.  **Multiple People:** When searching for photos with multiple people, create a `MATCH` path for each person all pointing to the *same* photo variable.
-    *   Example: `MATCH (p1:Person)-[:AppearsIn]->(photo), (p2:Person)-[:AppearsIn]->(photo)`
-7.  **Output Columns:** The final `SELECT` statement should always return the photo's details: `photo.photo_id, photo.photo_location, photo.timestamp, photo.location_name`.
+1.  **READ-ONLY:** You MUST only generate `SELECT` statements.
+2.  **GRAPH SYNTAX:** All queries MUST use `FROM GRAPH PhotosGraph` and the `MATCH` clause.
+3.  **Parameterize Inputs:** ALWAYS use parameters (`@param_name`) for user-provided values.
+4.  **Relationship Mapping:** Map terms like 'friends' to `relationship_type = 'FRIEND'` and 'family' or 'cousins' to `relationship_type = 'FAMILY'`.
+5.  **Output Columns:** The final `SELECT` must return: `photo.photo_id, photo.photo_location, photo.timestamp, photo.location_name`.
 
 **Example Interaction:**
 
-*   **User:** "Show me photos of Rohan and Anjali from the Goa trip."
+*   **User:** "Show me photos of my cousins from the Goa trip. For context, my name is Rohan."
 *   **Your Action (Agent's internal thought):**
-    1.  Identify people: 'Rohan', 'Anjali'.
-    2.  Identify location: 'Goa'.
-    3.  Construct the query:
+    1.  **Identify:** User is 'Rohan', relationship is 'cousins' (maps to 'FAMILY'), location is 'Goa'.
+    2.  **Construct Query:** Find a `user` named 'Rohan', find a `cousin` connected by a `RelationShip` edge of type 'FAMILY', then find a `photo` the `cousin` `AppearsIn`. The photo must also match the location.
         ```sql
-        SELECT photo.photo_id, photo.photo_location, photo.timestamp, photo.location_name
-        FROM GRAPH PhotosGraph
-        MATCH (person1:Person)-[:AppearsIn]->(photo:Photo), (person2:Person)-[:AppearsIn]->(photo:Photo)
-        WHERE person1.name = @name1 AND person2.name = @name2 AND photo.location_name LIKE @location
+        SELECT
+          photo.photo_id,
+          photo.photo_location,
+          photo.timestamp,
+          photo.location_name
+        FROM
+          GRAPH PhotosGraph
+        MATCH
+          (user:Person)-[r:RelationShip]-(cousin:Person),
+          (cousin)-[:AppearsIn]->(photo:Photo)
+        WHERE
+          user.name = @user_name AND
+          r.relationship_type = 'FAMILY' AND
+          photo.location_name LIKE @location
         ```
-    4.  Construct the parameters:
-        *   `params`: `{"name1": "Rohan", "name2": "Anjali", "location": "%Goa%"}`
-        *   `param_types_map`: `{"name1": "STRING", "name2": "STRING", "location": "STRING"}`
-    5.  Call the tool: `execute_graph_query(query=..., params=..., param_types_map=...)`
+    3.  **Construct Parameters:**
+        *   `params`: `{"user_name": "Rohan", "location": "%Goa%"}`
+        *   `param_types_map`: `{"user_name": "STRING", "location": "STRING"}`
+    4.  **Call Tool:** `execute_graph_query(query=..., params=..., param_types_map=...)`
 """,
     tools=[execute_graph_query],
 )
