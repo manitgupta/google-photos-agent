@@ -1,7 +1,7 @@
 sources:
   social-graph-spanner-source:
     kind: spanner
-    project: PROJECT_NAME
+    project: ${GOOGLE_CLOUD_PROJECT}
     instance: google-photos-instance
     database: google-photos
 

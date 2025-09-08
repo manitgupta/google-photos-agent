@@ -1,29 +1,35 @@
 # google-photos-agent
 Sample project to demonstrate a request based agent that generates custom memories for you.
 
-# Set up
+# Project Setup
 
-### Run init 
+This section covers the one-time setup for your Google Cloud project.
 
-```aiexclude
-chmod +x ~/google-photos-agent/init.sh
-chmod +x ~/google-photos-agent/set_env.sh
-```
+### 1. Initialize the Environment
 
-```aiexclude
-cd ~/google-photos-agent
+Run the initialization script and source the environment setup file. This will set essential environment variables for subsequent commands.
+
+```bash
+# From the project root directory
+chmod +x ./init.sh
+chmod +x ./set_env.sh
 ./init.sh
+source ./set_env.sh
 ```
 
-### Set project ID
+### 2. Set Project ID
 
-```aiexclude
+Ensure your gcloud CLI is configured to use your correct Google Cloud project.
+
+```bash
 gcloud config set project $(cat ~/project_id.txt) --quiet
 ```
 
-### Enable services
+### 3. Enable Google Cloud Services
 
-```
+Enable all the necessary APIs for the application to function.
+
+```bash
 gcloud services enable  run.googleapis.com \
                         cloudfunctions.googleapis.com \
                         cloudbuild.googleapis.com \
@@ -36,187 +42,164 @@ gcloud services enable  run.googleapis.com \
                         cloudresourcemanager.googleapis.com
 ```
 
-### Set env variables
+### 4. Set Up Spanner Database
 
-```
-export PROJECT_ID=$(gcloud config get project)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
-export SPANNER_INSTANCE_ID="google-photos-instance"
-export SPANNER_DATABASE_ID="google-photos"
-export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
-export GOOGLE_GENAI_USE_VERTEXAI=TRUE
-export GOOGLE_CLOUD_LOCATION="us-central1"
-```
+Create the Spanner instance and database required for the application.
 
-or for fish terminal 
+```bash
+# Create the Spanner Instance
+gcloud spanner instances create $SPANNER_INSTANCE_ID \
+  --config=regional-us-central1 \
+  --description="Google Photos Instance" \
+  --processing-units=100 \
+  --edition=ENTERPRISE
 
-```aiexclude
-set -gx PROJECT_ID (gcloud config get project)
-set -gx PROJECT_NUMBER (gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-set -gx SERVICE_ACCOUNT_NAME (gcloud compute project-info describe --format="value(defaultServiceAccount)")
-set -gx SPANNER_INSTANCE_ID "google-photos-instance"
-set -gx SPANNER_DATABASE_ID "google-photos"
-set -gx GOOGLE_CLOUD_PROJECT (gcloud config get project)
-set -gx GOOGLE_GENAI_USE_VERTEXAI TRUE
-set -gx GOOGLE_CLOUD_LOCATION "us-central1"
+# Create the Spanner Database
+gcloud spanner databases create $SPANNER_DATABASE_ID \
+  --instance=$SPANNER_INSTANCE_ID \
+  --database-dialect=GOOGLE_STANDARD_SQL
 ```
 
-### Service Account Credentials (for Local Development Only)
+# Local Development
 
-**Note:** This step is **not required** for the Cloud Run deployment. It is only needed if you want to run the application directly on your local machine (e.g., `python app.py`). The Cloud Run service automatically uses the attached service account identity.
-To generate signed URLs for Google Cloud Storage when running locally, the application needs a service account key.
+This section explains how to run the complete application (Flask frontend and ADK agent) on your local machine. This requires two terminal windows.
 
-1.  **Create a service account key:**
+### 1. Prerequisites
 
-    ```bash
-    # Ensure you have sourced the set_env.sh script or exported the variables first.
-    gcloud iam service-accounts keys create ~/key.json --iam-account="$SERVICE_ACCOUNT_NAME"
-    ```
+Complete these steps before running the application.
 
-2.  **Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable:**
+**A. Authenticate for Local Development**
 
-    **For bash:**
-    ```bash
-    export GOOGLE_APPLICATION_CREDENTIALS=~/key.json
-    ```
+The agent calls Google AI models using your personal user credentials. Authenticate with gcloud and grant your user the necessary Spanner permissions.
 
-    **For fish:**
-    ```fish
-    set -gx GOOGLE_APPLICATION_CREDENTIALS ~/key.json
-    ```
+```bash
+# Log in with Application Default Credentials
+gcloud auth application-default login
 
-### Enable permissions
+# Grant your user account Spanner access
+# Replace [YOUR_EMAIL_ACCOUNT] with the email you used to log in
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="user:[YOUR_EMAIL_ACCOUNT]" \
+    --role="roles/spanner.databaseUser"
 
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="user:[YOUR_EMAIL_ACCOUNT]" \
+    --role="roles/spanner.databaseReader"
 ```
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/spanner.admin"
+**Note:** The `set_env.sh` script is configured to unset the `GOOGLE_APPLICATION_CREDENTIALS` variable, which is required for this authentication method to work correctly.
 
-# Spanner Database User
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/spanner.databaseUser"
+**B. Install Python Dependencies**
 
-# Artifact Registry Admin
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/artifactregistry.admin"
+Set up a virtual environment and install the required packages.
 
-# Cloud Build Editor
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/cloudbuild.builds.editor"
-
-# Cloud Run Admin
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/run.admin"
-
-# IAM Service Account User
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/iam.serviceAccountUser"
-
-# Vertex AI User
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/aiplatform.user"
-
-# Logging Writer (to allow writing logs)
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/logging.logWriter"
-
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/logging.viewer"
-
-# Storage Admin (to create buckets)
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT_NAME" \
-  --role="roles/storage.admin"
-
+```bash
+# From the project root directory
+python -m venv env
+source env/bin/activate
+pip install -r requirements.txt
 ```
 
-### Create Artifact repo 
+**C. Load Mock Data**
 
-```aiexclude
-export REPO_NAME="google-photos-repo"
+Run the setup script to populate the Spanner database and upload a sample image to Cloud Storage.
+
+```bash
+# From the project root directory
+cd google-photos
+python setup.py
+cd .. 
+```
+
+**D. Download and Configure the Agent Toolbox**
+
+The agent relies on the MCP Toolbox to interact with its tools.
+
+1.  **Download the Toolbox Binary:** From the `agents/social-profiling-agent` directory, run the command for your OS.
+
+    *   **macOS (Apple Silicon):**
+        ```bash
+        curl -L -o toolbox https://storage.googleapis.com/genai-toolbox/v0.8.0/darwin/arm64/toolbox
+        chmod +x toolbox
+        ```
+    *   **macOS (Intel):**
+        ```bash
+        curl -L -o toolbox https://storage.googleapis.com/genai-toolbox/v0.8.0/darwin/amd64/toolbox
+        chmod +x toolbox
+        ```
+    *   **Linux (x86_64):**
+        ```bash
+        curl -L -o toolbox https://storage.googleapis.com/genai-toolbox/v0.8.0/linux/amd64/toolbox
+        chmod +x toolbox
+        ```
+
+### 2. Running the Application
+
+**A. Terminal 1: Start the Toolbox Server**
+
+This server allows the agent to execute its tools.
+
+```bash
+# cd into the agent directory
+cd google-photos/social-profiling-agent
+
+# Start the server
+./toolbox --tools-file "tools.yaml" --log-level DEBUG
+```
+Leave this terminal running.
+
+**B. Terminal 2: Start the Flask Web Application**
+
+This runs the main Python web server.
+
+```bash
+# Make sure you are in the project root and your venv is active
+source ./set_env.sh # Ensure environment variables are set
+
+# cd into the application directory
+cd google-photos
+
+# Run the Flask app
+python app.py
+```
+You can now access the web application at the URL shown in the terminal (usually `http://127.0.0.1:8080`). The search bar and chatbot will now be fully functional, powered by the integrated agent.
+
+# Deploy to Cloud Run
+
+If you want to deploy the application to a public URL instead of running it locally, you can use the provided deployment script.
+
+### 1. Create Artifact Repository
+
+```bash
 gcloud artifacts repositories create $REPO_NAME \
   --repository-format=docker \
   --location=us-central1 \
   --description="Docker repository for Google Photos Memory Agent"
 ```
 
-### Setup graph database
+### 2. Grant Service Account Permissions
 
-```aiexclude
-. ~/google-photos-agent/set_env.sh
-```
-
-```aiexclude
-gcloud spanner instances create $SPANNER_INSTANCE_ID \
-  --config=regional-us-central1 \
-  --description="Google Photos Instance" \
-  --processing-units=100 \
-  --edition=ENTERPRISE
-  ```
-
-```
-gcloud spanner databases create $SPANNER_DATABASE_ID \
-  --instance=$SPANNER_INSTANCE_ID \
-  --database-dialect=GOOGLE_STANDARD_SQL
-```
-
-### Spanner permissions
-
-```aiexclude
-echo "Granting Spanner read/write access to ${SERVICE_ACCOUNT_NAME} for database ${SPANNER_DATABASE_ID}..."
-
-gcloud spanner databases add-iam-policy-binding ${SPANNER_DATABASE_ID} \
-  --instance=${SPANNER_INSTANCE_ID} \
-  --member="serviceAccount:${SERVICE_ACCOUNT_NAME}" \
-  --role="roles/spanner.databaseUser" \
-  --project=${PROJECT_ID}
-```
-
-### Setup Python env and load mock data
-
-```aiexclude
-source ~/google-photos-agent/set_env.sh
-cd ~/google-photos-agent
-python -m venv env
-source env/bin/activate
-pip install -r requirements.txt
-cd google-photos
-python setup.py
-```
-
-The `setup.py` script will also create a Google Cloud Storage bucket named `photos-<YOUR-PROJECT-ID>`, upload a sample image, and grant the application's service account the necessary permissions to view the images in the bucket.
-
-or for fish terminal 
-
-```aiexclude
-source ~/google-photos-agent/set_env_fish.sh
-cd ~/google-photos-agent
-python -m venv env
-source env/bin/activate.fish
-pip install -r requirements.txt
-cd google-photos
-python setup.py
-```
-
-Note: Verify if `set_env.sh` has correctly set the environment variables!
-
-### Deploy to Cloud Run
-
-With the infrastructure and data in place, run the deployment script. This will build the application container using Cloud Build and deploy it as a **public** service on Cloud Run.
+The Cloud Run service needs permissions to access other Google Cloud services.
 
 ```bash
-cd ~/google-photos-agent
-./deploy.sh
+# Grant all necessary roles to the default Compute Service Account
+export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
+
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/spanner.databaseUser"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/artifactregistry.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/cloudbuild.builds.editor"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/run.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/iam.serviceAccountUser"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/aiplatform.user"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/logging.logWriter"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_NAME" --role="roles/storage.admin"
 ```
 
+### 3. Deploy
+
+Run the deployment script. This will build the container image and deploy it to Cloud Run.
+
+```bash
+# From the project root directory
+./deploy.sh
+```
 After the script completes, it will output the public URL for your running application.

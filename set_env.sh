@@ -2,7 +2,7 @@
 
 # This script sets various Google Cloud related environment variables.
 # It must be SOURCED to make the variables available in your current shell.
-# Example: source ./set_gcp_env.sh
+# Example: source ./set_env.sh
 
 # --- Configuration ---
 PROJECT_FILE="~/project_id.txt"
@@ -16,16 +16,13 @@ echo "--- Setting Google Cloud Environment Variables ---"
 
 # --- Authentication Check ---
 echo "Checking gcloud authentication status..."
-# Run a command that requires authentication (like listing accounts or printing a token)
-# Redirect stdout and stderr to /dev/null so we don't see output unless there's a real error
-if gcloud auth print-access-token > /dev/null 2>&1; then
-  echo "gcloud is authenticated."
+# For local development with the social-profiling-agent, we use Application Default Credentials
+# Check if the user is logged in for ADC
+if gcloud auth application-default print-access-token > /dev/null 2>&1; then
+  echo "gcloud is authenticated with Application Default Credentials."
 else
-  echo "Error: gcloud is not authenticated."
-  echo "Please log in by running: gcloud auth login"
-  # Use 'return 1' instead of 'exit 1' because the script is meant to be sourced.
-  # 'exit 1' would close your current terminal session.
-  return 1
+  echo "Warning: gcloud not authenticated for Application Default Credentials."
+  echo "Please run 'gcloud auth application-default login' for local agent testing."
 fi
 # --- --- --- --- --- ---
 
@@ -53,40 +50,51 @@ echo "Exported PROJECT_ID=$PROJECT_ID"
 export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
 echo "Exported PROJECT_NUMBER=$PROJECT_NUMBER"
 
-# 5. Export SERVICE_ACCOUNT_NAME (Default Compute Service Account)
-export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
-if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
-  echo "Error: Could not determine the default Compute Engine service account."
-  echo "This can happen if the Compute Engine API has not been used in this project yet."
-  echo "Please try enabling the API and waiting a few minutes, or create a dedicated service account."
-  return 1
-else
-  echo "Exported SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME"
-fi
+# 5. Unset GOOGLE_APPLICATION_CREDENTIALS for local development
+# This ensures that the Application Default Credentials are used.
+echo "Unsetting GOOGLE_APPLICATION_CREDENTIALS for local agent development."
+unset GOOGLE_APPLICATION_CREDENTIALS
 
-# 6. Create Service Account Key
-if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
-  echo "Error: SERVICE_ACCOUNT_NAME is not set. Cannot create a key."
-  return 1
-fi
 
-KEY_FILE=~/key.json
-
-echo "Checking for existing key file at $KEY_FILE..."
-if [ -f "$KEY_FILE" ]; then
-  echo "Deleting existing key file..."
-  rm "$KEY_FILE"
-fi
-
-echo "Creating new service account key..."
-gcloud iam service-accounts keys create "$KEY_FILE" --iam-account="$SERVICE_ACCOUNT_NAME"
-
-# 7. Copy key to google-photos directory
-cp $KEY_FILE google-photos/key.json
-
-# 8. Export GOOGLE_APPLICATION_CREDENTIALS
-export GOOGLE_APPLICATION_CREDENTIALS="$KEY_FILE"
-echo "Exported GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+# The following steps for creating and using a service account key are not
+# needed for local development with the social-profiling-agent, which uses
+# your personal Application Default Credentials. They are preserved here in case
+# a service account is needed for other deployment scenarios.
+#
+# # 5. Export SERVICE_ACCOUNT_NAME (Default Compute Service Account)
+# export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
+# if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
+#   echo "Error: Could not determine the default Compute Engine service account."
+#   echo "This can happen if the Compute Engine API has not been used in this project yet."
+#   echo "Please try enabling the API and waiting a few minutes, or create a dedicated service account."
+#   return 1
+# else
+#   echo "Exported SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME"
+# fi
+#
+# # 6. Create Service Account Key
+# if [ -z "$SERVICE_ACCOUNT_NAME" ]; then
+#   echo "Error: SERVICE_ACCOUNT_NAME is not set. Cannot create a key."
+#   return 1
+# fi
+#
+# KEY_FILE=~/key.json
+#
+# echo "Checking for existing key file at $KEY_FILE..."
+# if [ -f "$KEY_FILE" ]; then
+#   echo "Deleting existing key file..."
+#   rm "$KEY_FILE"
+# fi
+#
+# echo "Creating new service account key..."
+# gcloud iam service-accounts keys create "$KEY_FILE" --iam-account="$SERVICE_ACCOUNT_NAME"
+#
+# # 7. Copy key to google-photos directory
+# cp $KEY_FILE google-photos/key.json
+#
+# # 8. Export GOOGLE_APPLICATION_CREDENTIALS
+# export GOOGLE_APPLICATION_CREDENTIALS="$KEY_FILE"
+# echo "Exported GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
 
 # 9. Export SPANNER_INSTANCE_ID
 # Use the variable defined in the configuration section
