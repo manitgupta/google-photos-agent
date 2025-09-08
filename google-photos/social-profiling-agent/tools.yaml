@@ -1,0 +1,154 @@
+sources:
+  social-graph-spanner-source:
+    kind: spanner
+    project: PROJECT_NAME
+    instance: google-photos-instance
+    database: google-photos
+
+tools:
+  find_photos_with_person_by_name:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos that a specific list of people appear in."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: person_names, type: string, description: "A comma-separated string of names of people who must appear in the photos (e.g., 'Priya,Vikram,Rohan')." }
+    statement: |
+      SELECT DISTINCT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      JOIN PersonAppearsInPhoto AS paip ON p.photo_id = paip.photo_id
+      JOIN Person AS appears ON paip.person_id = appears.person_id
+      WHERE u.name = @user_name AND appears.name IN UNNEST(SPLIT(@person_names, ','))
+
+  find_owned_photos_by_location:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos from a specific location."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: location, type: string, description: "The location to search for." }
+    statement: |
+      SELECT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      WHERE u.name = @user_name AND p.location_name LIKE @location
+
+  find_owned_photos_by_time:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos from a specific time range."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: start_time, type: string, description: "The start timestamp (e.g., '2023-01-01T00:00:00Z')." }
+      - { name: end_time, type: string, description: "The end timestamp (e.g., '2023-12-31T23:59:59Z')." }
+    statement: |
+      SELECT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      WHERE u.name = @user_name AND p.timestamp BETWEEN @start_time AND @end_time
+
+  find_photos_with_person_by_name_and_location:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos that a list of people appear in, filtered by a location."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: person_names, type: string, description: "A comma-separated string of names of people who must appear in the photos." }
+      - { name: location, type: string, description: "The location to search for." }
+    statement: |
+      SELECT DISTINCT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      JOIN PersonAppearsInPhoto AS paip ON p.photo_id = paip.photo_id
+      JOIN Person AS appears ON paip.person_id = appears.person_id
+      WHERE u.name = @user_name AND appears.name IN UNNEST(SPLIT(@person_names, ',')) AND p.location_name LIKE @location
+
+  find_photos_with_person_by_name_and_time:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos that a list of people appear in, filtered by a time range."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: person_names, type: string, description: "A comma-separated string of names of people who must appear in the photos." }
+      - { name: start_time, type: string, description: "The start timestamp." }
+      - { name: end_time, type: string, description: "The end timestamp." }
+    statement: |
+      SELECT DISTINCT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      JOIN PersonAppearsInPhoto AS paip ON p.photo_id = paip.photo_id
+      JOIN Person AS appears ON paip.person_id = appears.person_id
+      WHERE u.name = @user_name AND appears.name IN UNNEST(SPLIT(@person_names, ',')) AND p.timestamp BETWEEN @start_time AND @end_time
+
+  find_owned_photos_by_location_and_time:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find a user's photos from a specific location and time range."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: location, type: string, description: "The location to search for." }
+      - { name: start_time, type: string, description: "The start timestamp." }
+      - { name: end_time, type: string, description: "The end timestamp." }
+    statement: |
+      SELECT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      WHERE u.name = @user_name AND p.location_name LIKE @location AND p.timestamp BETWEEN @start_time AND @end_time
+
+  find_photos_with_person_by_name_location_and_time:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "The most specific query: find a user's photos with a list of people, filtered by location and time."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user who owns the photos." }
+      - { name: person_names, type: string, description: "A comma-separated string of names of people who must appear in the photos." }
+      - { name: location, type: string, description: "The location to search for." }
+      - { name: start_time, type: string, description: "The start timestamp." }
+      - { name: end_time, type: string, description: "The end timestamp." }
+    statement: |
+      SELECT DISTINCT p.photo_id, p.photo_location, p.timestamp, p.location_name
+      FROM Person AS u
+      JOIN PersonOwnsPhoto AS pop ON u.person_id = pop.person_id
+      JOIN Photo AS p ON pop.photo_id = p.photo_id
+      JOIN PersonAppearsInPhoto AS paip ON p.photo_id = paip.photo_id
+      JOIN Person AS appears ON paip.person_id = appears.person_id
+      WHERE u.name = @user_name AND appears.name IN UNNEST(SPLIT(@person_names, ',')) AND p.location_name LIKE @location AND p.timestamp BETWEEN @start_time AND @end_time
+
+  find_relationships_by_type:
+    kind: spanner-sql
+    source: social-graph-spanner-source
+    description: "Find the names of people who have a specific relationship type with the user."
+    parameters:
+      - { name: user_name, type: string, description: "The name of the user." }
+      - { name: relationship_type, type: string, description: "The type of relationship (e.g., 'FRIEND', 'FAMILY')." }
+    statement: |
+      SELECT p2.name AS person_name
+      FROM Person AS p1
+      JOIN PersonRelationships AS pr ON p1.person_id = pr.person1_id
+      JOIN Person AS p2 ON pr.person2_id = p2.person_id
+      WHERE p1.name = @user_name AND pr.relationship_type = @relationship_type
+      UNION ALL
+      SELECT p1.name AS person_name
+      FROM Person AS p2
+      JOIN PersonRelationships AS pr ON p2.person_id = pr.person2_id
+      JOIN Person AS p1 ON pr.person1_id = p1.person_id
+      WHERE p2.name = @user_name AND pr.relationship_type = @relationship_type
+
+toolsets:
+  social_profiling_toolset:
+    - find_photos_with_person_by_name
+    - find_owned_photos_by_location
+    - find_owned_photos_by_time
+    - find_photos_with_person_by_name_and_location
+    - find_photos_with_person_by_name_and_time
+    - find_owned_photos_by_location_and_time
+    - find_photos_with_person_by_name_location_and_time
+    - find_relationships_by_type
+
