@@ -8,23 +8,11 @@
 
 {% block content %}
 {% if user %}
-<div class="user-profile">
-    <img src="{{ user.photo_location }}" alt="{{ user.name }}'s profile picture" class="profile-pic">
-    <h2 style="animation: fadeIn 0.5s ease-in-out;">{{ user.name }}'s Photos</h2>
-</div>
+<h2 style="animation: fadeIn 0.5s ease-in-out;">{{ user.name }}'s Photos</h2>
 {% endif %}
 
-<!-- Search Bar Form -->
-<div class="search-container">
-    <form id="search-form" class="search-form">
-        <input type="text" id="search-input" name="query" placeholder="Search for photos of people, places, and more..." class="search-input" value="{{ search_query }}">
-        <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
-    </form>
-</div>
-
-<!-- Container for search results -->
-<div id="photo-grid" class="photo-grid">
-    {% if photos %}
+{% if photos %}
+<div class="photo-grid">
     {% for photo in photos %}
     <div class="photo-item">
         <img src="{{ photo.photo_location }}" alt="Photo by {{ user.name if user else 'user' }}">
@@ -38,99 +26,16 @@
         </div>
     </div>
     {% endfor %}
-    {% else %}
-    <div id="empty-state" class="empty-state">
-        <i class="fas fa-image"></i>
-        <p>No photos yet. Your uploaded photos will appear here.</p>
-    </div>
-    {% endif %}
 </div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-image"></i>
+    <p>No photos yet. Your uploaded photos will appear here.</p>
+</div>
+{% endif %}
 
 <div id="photo-viewer" class="modal">
     <span class="close">&times;</span>
     <img class="modal-content" id="full-photo">
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchForm = document.getElementById('search-form');
-        const searchInput = document.getElementById('search-input');
-        const photoGrid = document.getElementById('photo-grid');
-
-        searchForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const query = searchInput.value.trim();
-
-            if (!query) return;
-
-            // Add a loading indicator
-            photoGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
-
-            try {
-                const response = await fetch('{{ url_for("api_chatbot") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: query })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // Clear the grid before adding new photos
-                photoGrid.innerHTML = '';
-
-                if (data.response_type === 'photos') {
-                    const photos = data.data;
-                    if (photos && photos.length > 0) {
-                        photos.forEach(photo => {
-                            const photoItem = document.createElement('div');
-                            photoItem.className = 'photo-item';
-
-                            const img = document.createElement('img');
-                            // Use the signed URL from the agent's response
-                            img.src = photo.photo_location;
-                            img.alt = `Photo at ${photo.location_name || 'location'}`;
-
-                            const overlay = document.createElement('div');
-                            overlay.className = 'photo-overlay';
-                            // Note: People-in-photo data is not available from this API response, so we omit it for search results.
-
-                            photoItem.appendChild(img);
-                            photoItem.appendChild(overlay);
-                            photoGrid.appendChild(photoItem);
-                        });
-                    } else {
-                        displayEmptyState('fa-search', `No photos found for your search: "${query}"`);
-                    }
-                } else if (data.response_type === 'text') {
-                    // Display the agent's text response as an info message
-                    displayEmptyState('fa-info-circle', `Agent response: ${data.data}`);
-                } else {
-                    // Display a 'no results' message
-                    displayEmptyState('fa-search', `No photos found for your search: "${query}"`);
-                }
-
-            } catch (error) {
-                console.error('Search failed:', error);
-                displayEmptyState('fa-exclamation-circle', 'An error occurred during the search. Please try again.');
-            }
-        });
-
-        function displayEmptyState(iconClass, message) {
-            photoGrid.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas ${iconClass}"></i>
-                    <p>${message}</p>
-                </div>
-            `;
-        }
-    });
-</script>
 {% endblock %}
