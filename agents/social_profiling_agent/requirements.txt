@@ -1,0 +1,8 @@
+google-adk
+google-cloud-storage
+google-adk
+a2a-sdk==0.2.8
+uvicorn
+python-dotenv
+google-cloud-spanner
+toolbox-core

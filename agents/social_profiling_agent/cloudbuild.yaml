@@ -1,0 +1,11 @@
+# social_profiling_agent/cloudbuild.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE_PATH}'
+      - '--file=agents/social_profiling_agent/Dockerfile'
+      - '.'
+images:
+  - '${_IMAGE_PATH}'

@@ -13,7 +13,7 @@ from google.cloud import storage
 
 # --- Agent Integration (Corrected based on user-provided example) ---
 try:
-    from social_profiling_agent.agent import root_agent
+    from agents.social_profiling_agent import root_agent
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
     # FIX: Use the correct import path from the 'google-genai' library,

@@ -1,7 +1,7 @@
 sources:
   social-graph-spanner-source:
     kind: spanner
-    project: ${GOOGLE_CLOUD_PROJECT}
+    project: terraform-demo-service
     instance: google-photos-instance
     database: google-photos
 
