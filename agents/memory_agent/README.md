@@ -1,8 +1,13 @@
+```aiexclude
 . ~/google-photos-agent/set_env.sh
 
 cd ~/google-photos-agent/agents
 
-# Set variables specific to the PLANNER agent
+```
+
+# Set variables specific to the MEMORY agent
+
+```aiexclude
 export IMAGE_TAG="latest"
 export AGENT_NAME="memory_agent"
 export IMAGE_NAME="memory-agent"
@@ -18,14 +23,16 @@ gcloud builds submit . \
   --substitutions=_AGENT_NAME=${AGENT_NAME},_IMAGE_PATH=${IMAGE_PATH}
 
 echo "Image built and pushed to: ${IMAGE_PATH}"
-
+```
 
 
 . ~/google-photos-agent/set_env.sh
 
 cd ~/google-photos-agent/agents
 
-# Set variables specific to the PLANNER agent
+# Set variables specific to the MEMORY agent
+
+```aiexclude
 export IMAGE_TAG="latest"
 export AGENT_NAME="memory_agent"
 export IMAGE_NAME="memory-agent"
@@ -48,7 +55,10 @@ gcloud run deploy ${SERVICE_NAME} \
   --project=${PROJECT_ID} \
   --min-instances=1
 
+```
 
+```aiexclude
 export SERVICE_ACCOUNT_NAME=$(gcloud compute project-info describe --format="value(defaultServiceAccount)")
 gcloud storage buckets add-iam-policy-binding gs://photos-agent       --member=serviceAccount:$SERVICE_ACCOUNT_NAME      --role=roles/storage.objectCreator
 gcloud storage buckets add-iam-policy-binding gs://photos-agent       --member=serviceAccount:$SERVICE_ACCOUNT_NAME      --role=roles/storage.objectViewer
+```

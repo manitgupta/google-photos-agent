@@ -23,7 +23,7 @@ try:
     TaskUpdateCallback,
   )
 except ImportError:
-  from remote_agent_connection import (
+  from orchestrate.remote_agent_connection import (
     RemoteAgentConnections,
     TaskUpdateCallback,
   )
@@ -134,12 +134,12 @@ class HostAgent:
 
                     *   **Understand User Intent & Complexity:**
                         *   Carefully analyze the user's request to determine the core task(s) they want to achieve. Pay close attention to keywords and the overall goal.
-                        *   Identify if the request requires a single agent or a sequence of actions from multiple agents. For example, "Analyze John Doe's profile and then create a positive post about his recent event attendance" would require two agents in sequence.
+                        *   Identify if the request requires a single agent or a sequence of actions from multiple agents. For example, "Generate a collage of Rohan and Anjali" would require two agents in sequence.
 
                     *   **Task Planning & Sequencing (for Multi-Step Requests):**
                         *   Before delegating, outline the clear sequence of agent tasks.
-                        *   Identify dependencies. If Task B requires output from Task A, execute them sequentially. If tasks are independent (like creating a post and then creating an event), execute them one after the other as separate delegations.
-                        *   Agent Reusability: An agent's completion of one task does not make it unavailable. If a user's plan involves multiple, distinct actions that fall under the same agent's expertise (e.g., create a post, then create an event), you must call that same agent again for the subsequent task.
+                        *   Identify dependencies. If Task B requires output from Task A, execute them sequentially. If tasks are independent (like finding the images of the people in the prompt and then creating a collage), execute them one after the other as separate delegations.
+                        *   Agent Reusability: An agent's completion of one task does not make it unavailable. If a user's plan involves multiple, distinct actions that fall under the same agent's expertise (e.g., find relationships, then create a collage), you must call that same agent again for the subsequent task.
 
                     *   **Task Delegation & Management (using `send_message`):**
                         *   **Delegation:** Use `send_message` to assign actionable tasks to the selected remote agent. Your `send_message` call MUST include:
@@ -163,8 +163,8 @@ class HostAgent:
 
                     *   **Transparent Communication:** Always present the complete and detailed response from the remote agent to the user. Do not summarize or filter unless explicitly instructed.
                     *   When you delegate a task (or the first task in a sequence), clearly inform the user which remote agent is handling it.
-                    *   For multi-step requests, you can optionally inform the user of the planned sequence (e.g., "Okay, first I'll ask the 'Social Profile Agent' to analyze the profile, and then I'll have the 'Instavibe Posting Agent' create the post.").
-                    *   If waiting for a task in a sequence to complete, you can inform the user (e.g., "The 'Social Profile Agent' is currently processing. I'll proceed with the post once that's done.").
+                    *   For multi-step requests, you can optionally inform the user of the planned sequence (e.g., "Okay, first I'll ask the 'Social Profile Agent' to analyze the relationships, and then I'll have the 'Memory agent' create the collage.").
+                    *   If waiting for a task in a sequence to complete, you can inform the user (e.g., "The 'Social Profile Agent' is currently processing. I'll proceed with creating the collage once that's done.").
                     *   **User Confirmation Relay:** If a remote agent asks for confirmation, and the user has not already provided it, just make up something.
                     *   If the user's request is ambiguous, if necessary information is missing for any agent in the sequence, or if you are unsure about the plan, just make up something.
 
