@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 BASE_URL = os.environ.get("GOOGLE_PHOTOS_BASE_URL")
 
-def create_post(user_id: str, memory_title: str, memory_description: str, memory_media: str = None, base_url: str = BASE_URL):
+def create_post(user_id: str, memory_title: str, memory_description: str, memory_media: str, base_url: str = BASE_URL):
     """
     Sends a POST request to the /api/memories endpoint to create a new memory.
 

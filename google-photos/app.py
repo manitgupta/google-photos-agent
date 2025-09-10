@@ -3,7 +3,7 @@ import uuid
 import traceback
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
-from flask import Flask, render_template, flash, request, jsonify
+from flask import Flask, render_template, flash, request, jsonify, redirect, url_for
 import humanize
 from dateutil import parser
 from google.cloud import storage
@@ -147,6 +147,10 @@ def index():
         user=user,
         people_in_photos=people_in_photos
     )
+
+@app.route('/search')                                                                                                                                                                                     
+def search():
+    return redirect(url_for('index'))
 
 @app.route('/memories')
 def memories():

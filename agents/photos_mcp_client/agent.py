@@ -45,7 +45,7 @@ async def get_agent_async():
 
   root_agent = LlmAgent(
       model='gemini-2.5-flash', # Adjust model name if needed based on availability
-      name='create_post_event_agent',
+      name='post_memory_agent',
       instruction="""
         You are a friendly and efficient assistant for the google photos app.
         Your primary goal is to help users create memories using the available tools.
