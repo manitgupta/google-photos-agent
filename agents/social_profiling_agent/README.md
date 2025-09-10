@@ -96,7 +96,7 @@ export AGENT_NAME="social_profiling_agent"
 export IMAGE_NAME="social-profiling-agent"
 export SERVICE_NAME="social-profiling-agent"
 export IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:latest"
-export PUBLIC_URL="https://$(echo ${SERVICE_NAME} | sed 's/_/-/g')-$(echo $PROJECT_NUMBER)-$(echo $REGION).run.app"
+export PUBLIC_URL="https://$(echo ${SERVICE_NAME} | sed 's/_/-/g')-$(echo $PROJECT_NUMBER).$(echo $REGION).run.app"
 
 # --- 1. Build Container ---
 echo "Building container for ${AGENT_NAME}..."

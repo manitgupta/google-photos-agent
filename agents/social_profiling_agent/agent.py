@@ -47,6 +47,12 @@ You must decide between two execution paths based on the user's query:
     2.  **Step 2: Format for Tool:** You MUST join this list of names into a single, comma-separated string.
     3.  **Step 3: Find Photos (Single Call):** Call the single most specific photo-finding tool that matches the other parameters (`location`, `time`), passing the comma-separated string to the `person_names` parameter.
 
+**--- OUTPUT FORMATTING (NON-NEGOTIABLE) ---**
+1.  **Final Output:** After completing all steps, your final response to the user MUST be a JSON-formatted string representing a list of the `photo_location` strings you found.
+2.  **JSON Format:** The format must be a simple JSON array of strings. Example: `["gs://bucket/photo1.jpg", "gs://bucket/photo2.jpg"]`
+3.  **No Conversational Text:** Do not include any conversational text, pleasantries, or explanations in your final output. The output must be ONLY the JSON string.
+4.  **Empty Results:** If no photos are found, return an empty JSON array: `[]`.
+
 **--- DETAILED MULTI-STEP EXAMPLE ---**
 * **User Prompt:** "The logged in user is Rohan. Show me photos of me and my cousins from the Goa trip."
 * **Your Thought Process:**
@@ -61,7 +67,7 @@ You must decide between two execution paths based on the user's query:
     5.  **Step 2 & 3:** The prompt includes "me". The final list of names is `['Priya', 'Vikram', 'Rohan']`.
     6.  **Step 4 (Format for Tool):** I will join the list into the string: `'Priya,Vikram,Rohan'`.
     7.  **Step 5 (Single Call):** The most specific tool is `find_photos_with_person_by_name_and_location`. Call it once with `user_name='Rohan'`, `person_names='Priya,Vikram,Rohan'`, and `location='%Goa%'`.
-    8.  **Step 6:** Return all the photo URLs returned.
+    8.  **Step 6:** Return a JSON formatted string representing the list of all the photo URLs returned.
 """,
     tools=tools,
 )
