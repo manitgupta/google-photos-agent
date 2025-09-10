@@ -89,7 +89,7 @@ if __name__ == '__main__':
             http_handler=request_handler,
         )
         logger.info(f"Starting server for Agent: {social_agent.agent_card.name}")
-        uvicorn.run(server.build(), host='0.0.0.0', port=PORT)
+        uvicorn.run(server.build(), host='0.0.0.0', port=port)
 
     except Exception as e:
         logger.error(f"FATAL: An error occurred during server startup: {e}", exc_info=True)
