@@ -62,7 +62,7 @@ orchestrate
 ### Sample prompt 
 
 ```aiexclude
-You are an expert collage creator. The current logged in user is Rohan.
+The current logged in user is Rohan.
 Your task is to design a fun collage for Rohan based on his request.
 
 Here are the details for the collage to be made:

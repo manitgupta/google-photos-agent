@@ -44,10 +44,12 @@ load_dotenv()
 
 # --- Configuration ---
 REMOTE_AGENT_ADDRESSES_STR = os.getenv("REMOTE_AGENT_ADDRESSES", "")
+PROJECT_NUMBER = os.environ.get("PROJECT_NUMBER")
 REMOTE_AGENT_ADDRESSES = [addr.strip() for addr in REMOTE_AGENT_ADDRESSES_STR.split(',') if addr.strip()]
 
 log.info(f"Remote Agent Addresses: {REMOTE_AGENT_ADDRESSES}")
 
+GCS_COLLAGE_FOLDER = f"gs://photos-{PROJECT_NUMBER}/memories/"
 # --- Helper Functions ---
 def create_send_message_payload(
     text: str, task_id: str | None = None, context_id: str | None = None
@@ -179,6 +181,11 @@ class HostAgent:
                     *   **Prioritize Recent Interaction:** Focus primarily on the most recent parts of the conversation when processing requests, while maintaining awareness of the overall goal for multi-step tasks.
                     *   Always prioritize selecting the correct agent(s) based on their documented purpose.
                     *   Ensure all information required by the chosen remote agent is included in the `send_message` call, including outputs from previous agents if it's a sequential task.
+                    
+                    **Hardcoded values:**
+                    
+                    * **Starting request for social profiling agent:** Social profiling agent requires to know the user who is logged in. Always start the request to this agent with "The current logged in user is <username>"
+                    * **Collage output path:** Memory agent needs receive an array of input images URLs and an output path as **input**. You should always construct the output path using {GCS_COLLAGE_FOLDER} as the folder. Generate a helpful name for the file, which is not longer than 20 characters, use a suffix of 5 characters to avoid collisions. For example: "rohan_collage_ed5fw.jpg"
 
                     Agents:
                     {self.agents}
