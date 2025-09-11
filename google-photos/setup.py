@@ -14,6 +14,7 @@ INSTANCE_ID = os.environ.get("SPANNER_INSTANCE_ID","google-photos-instance")
 DATABASE_ID = os.environ.get("SPANNER_DATABASE_ID","google-photos")
 
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
+PROJECT_NUMBER = os.environ.get("PROJECT_NUMBER")
 
 # --- Diagnostic: Check active credentials ---
 try:
@@ -224,7 +225,7 @@ def insert_relational_data(db_instance):
         return False
     print("\n--- Inserting Curated Data for Relational Tables ---")
 
-    BUCKET_NAME = f"photos-{PROJECT_ID}"
+    BUCKET_NAME = f"photos-{PROJECT_NUMBER}"
     SERVICE_ACCOUNT_NAME = os.environ.get("SERVICE_ACCOUNT_NAME")
 
     try:
