@@ -42,12 +42,16 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
     --role="roles/viewer"
 
 
-source ~/google-photos-agent/env/bin/activate
 export MEMORY_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep memory-agent)
-export SOCIAL_PROFILING_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-agent)
+export SOCIAL_PROFILING_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-profiling-agent)
+export PHOTOS_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep photos-agent)
 
-export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL}
+export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL},${PHOTOS_AGENT_URL}
+```
+
+```aiexclude
 echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
+```
 
 adk deploy agent_engine \
 --display_name "orchestrate-agent" \
