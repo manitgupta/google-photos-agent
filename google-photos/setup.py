@@ -176,6 +176,7 @@ def setup_base_schema_and_indexes(db_instance):
       "CREATE INDEX IF NOT EXISTS IDX_PersonPhotographedWithPerson_person2_id ON PersonPhotographedWithPerson(person2_id)",
       "CREATE INDEX IF NOT EXISTS IDX_PersonRelationships_person2_id_type ON PersonRelationships(person2_id, relationship_type)",
       "CREATE INDEX IF NOT EXISTS IDX_Memories_user_id_timestamp ON Memories(user_id, creation_timestamp DESC)",
+      "CREATE INDEX IF NOT EXISTS IDX_Person_name ON Person(name);",
   ]
   return run_ddl_statements(db_instance, ddl_statements, "Create Base Tables and Indexes")
 
