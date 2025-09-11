@@ -244,6 +244,8 @@ def insert_relational_data(db_instance):
     upload_blob(BUCKET_NAME, "static/city_park.jpeg", "city_park.jpeg")
     upload_blob(BUCKET_NAME, "static/college.jpeg", "college.jpeg")
     upload_blob(BUCKET_NAME, "static/home.jpeg", "home.jpeg")
+    upload_blob(BUCKET_NAME, "static/himalaya.jpeg", "himalaya.jpeg")
+    upload_blob(BUCKET_NAME, "static/diwali.jpeg", "diwali.jpeg")
 
 
     person_rows = [
