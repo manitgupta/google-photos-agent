@@ -53,6 +53,7 @@ export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL},
 echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
 ```
 
+```aiexclude
 adk deploy agent_engine \
 --display_name "orchestrate-agent" \
 --project $GOOGLE_CLOUD_PROJECT \
@@ -63,7 +64,7 @@ adk deploy agent_engine \
 orchestrate
 ```
 
-### Sample prompt 
+### Sample prompt #1
 
 ```aiexclude
 The current logged in user is Rohan.
@@ -78,4 +79,22 @@ Your process should be:
 2. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
 3. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it.
 4. If you don't find any photos, inform that you will be not able to create a collage.
+```
+
+### Sample prompt #2
+
+```aiexclude
+The current logged in user is Rohan.
+Your task is to design a fun collage for Rohan based on his request.
+
+Here are the details for the collage to be made:
+- People that should be in the collage: Relatives of Rohan
+- Once the collage is created, post it to the Google Photos app
+
+Your process should be:
+1. Analyze the input request. If you have access to a tool to get the names of relevant people, please use it.
+2. Analyze the determined names. If you have access to a tool to get their photographs, please use it.
+3. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
+4. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it.
+5. If you don't find any photos, inform that you will be not able to create a collage.
 ```
