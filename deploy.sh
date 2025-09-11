@@ -11,6 +11,8 @@ export IMAGE_NAME="google-photos-webapp"
 export IMAGE_TAG="latest"
 export IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
 export SERVICE_NAME="google-photos-agent"
+export ORCHESTRATE_AGENT_ID=projects/383364302094/locations/us-central1/reasoningEngines/1309918570913726464
+
 
 # Submit the build to Cloud Build
 echo "Submitting build..."
@@ -32,7 +34,10 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars="GOOGLE_CLOUD_LOCATION=${REGION}" \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
   --set-env-vars="GOOGLE_APPLICATION_CREDENTIALS=/app/key.json" \
+  --set-env-vars="ORCHESTRATE_AGENT_ID=${ORCHESTRATE_AGENT_ID}" \
   --project=${PROJECT_ID} \
-  --min-instances=1
+  --min-instances=1 \
+  --cpu=2 \
+  --memory=2Gi
 
 echo "Deployment complete."

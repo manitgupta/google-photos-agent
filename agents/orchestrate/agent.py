@@ -162,6 +162,12 @@ class HostAgent:
                     *   Your decision to proceed to the next task in a sequence **MUST** be based entirely on a confirmation of success from the tool_output of the previous task.
                     *   If a tool call fails, returns an error, or the tool_output is ambiguous, you MUST STOP the sequence. Your next action is to report the exact failure or ambiguity to the user.
                     *   DO NOT assume a task was successful. Do not invent success messages like "The event has been created." Only state that a task is complete if the tool's response explicitly says so.
+
+                    *   **Handling Tool Output:**
+                        *   The `send_message` tool returns a Task object. The output of the remote agent is in the `artifacts` field of the `result` of the Task object.
+                        *   The `artifacts` field is a list of artifacts. Each artifact has a `parts` field, which is a list of parts. Each part has a `text` field.
+                        *   The `text` field contains the output from the remote agent. You must parse this text to get the information you need for the next step.
+                        *   For example, after calling the Social Profiling Agent, the `text` field will contain a JSON array of GCS URLs. You must parse this JSON to get the list of URLs.
                     
                     **Communication with User:**
 

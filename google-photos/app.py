@@ -1,12 +1,17 @@
 import os
+import sys
 import uuid
 import traceback
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
-from flask import Flask, render_template, flash, request, jsonify, redirect, url_for
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from flask import Flask, render_template, flash, request, jsonify, redirect, url_for, Response, stream_with_context
 import humanize
 from dateutil import parser
 from google.cloud import storage
+import json
+import callagent
 
 # --- Agent Integration (Corrected based on user-provided example) ---
 try:
@@ -163,12 +168,10 @@ def memories():
             all_memories = db.get_memories_by_user_db(DUMMY_PERSON_ID)
             for memory in all_memories:
                 if memory.get('memory_media'):
-                    signed_media = []
-                    for media_uri in memory['memory_media']:
-                        signed_url = generate_signed_url(media_uri)
-                        if signed_url:
-                            signed_media.append(signed_url)
-                    memory['memory_media'] = signed_media
+                    # memory_media is a single string, not a list
+                    signed_url = generate_signed_url(memory['memory_media'])
+                    if signed_url:
+                        memory['memory_media'] = signed_url
         except Exception as e:
             flash(f"Failed to load memories: {e}", "danger")
             all_memories = []
@@ -196,26 +199,30 @@ def add_memory_api():
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
 
-    user_id = data['user_id']
+    user_name = data['user_id']
     memory_title = data['memory_title']
     memory_description = data['memory_description']
-    memory_media = data['memory_media']  # Now a required field
+    memory_media = data['memory_media']
 
     if not all(isinstance(data[field], str) and data[field].strip() for field in required_fields):
         return jsonify({"error": "All fields must be non-empty strings"}), 400
 
-    # Validate memory_media (now required)
     if not isinstance(memory_media, str):
         return jsonify({"error": "memory_media must be a string (GCS URI)"}), 400
 
     try:
+        person_data = db.get_person_by_name_db(user_name)
+        if not person_data:
+            return jsonify({"error": f"Person '{user_name}' not found"}), 404
+        user_id = person_data[0]['person_id']
+
         new_memory_id = str(uuid.uuid4())
         success = db.add_memory_db(
             memory_id=new_memory_id,
             user_id=user_id,
             memory_title=memory_title,
             memory_description=memory_description,
-            memory_media=memory_media  # Pass to DB function
+            memory_media=memory_media
         )
 
         if success:
@@ -240,18 +247,33 @@ def add_memory_api():
         traceback.print_exc()
         return jsonify({"error": "An internal server error occurred"}), 500
 
-@app.route('/api/chatbot', methods=['POST'])
+@app.route('/api/chatbot', methods=['GET'])
 def api_chatbot():
     """API endpoint for the chatbot."""
-    data = request.get_json()
-    if not data or 'message' not in data:
+    user_message = request.args.get('message')
+    if not user_message:
         return jsonify({"error": "Invalid request"}), 400
 
-    user_message = data['message']
-    # TODO: Implement chatbot logic here
-    bot_response = f"I received your message: '{user_message}'. I am still under development."
+    def generate():
+        user_data = db.get_person_by_id_db(DUMMY_PERSON_ID)
+        user_name = user_data[0]['name'] if user_data else 'Rohan'
+        for event in callagent.call_orchestrator_agent(user_name, user_message):
+            yield f"data: {json.dumps(event)}\n\n"
 
-    return jsonify({"response": bot_response})
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+
+@app.route('/api/generate-signed-url', methods=['POST'])
+def api_generate_signed_url():
+    data = request.get_json()
+    if not data or 'gcs_uri' not in data:
+        return jsonify({'error': 'Missing gcs_uri'}), 400
+    signed_url = generate_signed_url(data['gcs_uri'])
+    if signed_url:
+        return jsonify({'signed_url': signed_url})
+    else:
+        return jsonify({'error': 'Failed to generate signed URL'}), 500
+
 
 if __name__ == '__main__':
     if not db.db:

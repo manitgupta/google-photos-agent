@@ -316,7 +316,7 @@ def insert_relational_data(db_instance):
 
     memories_rows = [
         {'memory_id': 'mem01', 'user_id': 'p01', 'memory_title': 'Unforgettable Goa Trip!', 'memory_description': 'That amazing trip to Goa with Anjali and Sameer back in 2023. The beaches were incredible!', 'creation_timestamp': '2024-01-15T22:00:00Z', 'memory_media': f'gs://{BUCKET_NAME}/goa.jpeg'},
-        {'memory_id': 'mem02', 'user_id': 'p01', 'memory_title': 'Diwali 2021', 'memory_description': 'A beautiful Diwali night with the whole family at home. Everyone looks so happy.', 'creation_timestamp': '2022-05-20T15:30:00Z', 'memory_media': f'gs://{BUCKET_NAME}/delhi.png'},
+        {'memory_id': 'mem02', 'user_id': 'p01', 'memory_title': 'Diwali 2021', 'memory_description': 'A beautiful Diwali night with the whole family at home. Everyone looks so happy.', 'creation_timestamp': '2022-05-20T15:30:00Z', 'memory_media': f'gs://{BUCKET_NAME}/diwali.jpeg'},
     ]
 
     def insert_data_txn(transaction):

@@ -80,63 +80,8 @@ if (modal) { // Check if modal exists on the page
     });
 }
 
-/* Chatbot */
-const sendBtn = document.getElementById('send-btn');
-const userInput = document.getElementById('user-input');
-const chatWindow = document.querySelector('.chat-window');
 
-function sendMessage() {
-    const userMessage = userInput.value.trim();
-    if (userMessage && chatWindow) {
-        const userMessageDiv = document.createElement('div');
-        userMessageDiv.classList.add('chat-message', 'user-message');
-        userMessageDiv.innerHTML = `<p>${userMessage}</p>`;
-        chatWindow.appendChild(userMessageDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
 
-        userInput.value = '';
-
-        fetch('/api/chatbot', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ message: userMessage }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            const botMessage = data.response;
-            const botMessageDiv = document.createElement('div');
-            botMessageDiv.classList.add('chat-message', 'bot-message');
-            botMessageDiv.innerHTML = `<p>${botMessage}</p>`;
-            chatWindow.appendChild(botMessageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            const errorMessageDiv = document.createElement('div');
-            errorMessageDiv.classList.add('chat-message', 'bot-message');
-            errorMessageDiv.innerHTML = `<p>Sorry, I encountered an error. Please try again.</p>`;
-            chatWindow.appendChild(errorMessageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        });
-    }
-}
-
-if (sendBtn) {
-    sendBtn.addEventListener('click', sendMessage);
-}
-
-if (userInput) {
-    userInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-}
-
-/* Page Load and Nav Link Logic */
 document.addEventListener("DOMContentLoaded", function() {
     // Hide loader
     const loader = document.querySelector('.loader');
@@ -153,4 +98,94 @@ document.addEventListener("DOMContentLoaded", function() {
             link.classList.add('active');
         }
     });
+
+    // Chatbot logic
+    const chatWindow = document.querySelector('.chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const collageContainer = document.getElementById('collage-container');
+
+    if (sendBtn) { // Check if the button exists on the page
+        sendBtn.addEventListener('click', handleUserMessage);
+    }
+    if (userInput) {
+        userInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+    }
+
+    async function handleUserMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        appendMessage(message, 'user-message');
+        userInput.value = '';
+        if (collageContainer) {
+            collageContainer.innerHTML = ''; // Clear previous collage
+        }
+
+        const thinkingIndicator = appendMessage('<i class="fas fa-spinner fa-spin"></i>', 'bot-message thinking');
+
+        try {
+            const response = await fetch('/api/chatbot?message=' + encodeURIComponent(message), {
+                method: 'GET',
+            });
+
+            thinkingIndicator.remove();
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const eventData = JSON.parse(line.substring(6));
+                        if (eventData.type === 'thought') {
+                            appendMessage(`<i>${eventData.data}</i>`, 'bot-message thought-message');
+                        } else if (eventData.type === 'final_response') {
+                            handleFinalResponse(eventData.data);
+                        } else if (eventData.type === 'error') {
+                            appendMessage(`Sorry, I encountered an error: ${eventData.data.message}`, 'bot-message error-message');
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Fetch stream failed:", err);
+            thinkingIndicator.remove();
+            appendMessage("Sorry, I lost connection with the server.", 'bot-message error-message');
+        }
+    }
+
+    function handleFinalResponse(data) {
+        const gcsUriRegex = /(gs:\/\/[^\s,]+)/;
+        const match = data.match(gcsUriRegex);
+
+        if (match) {
+            const gcsUri = match[0];
+            appendMessage("I've created a collage for you! You can find it at: " + gcsUri, 'bot-message');
+        } else {
+            appendMessage(data, 'bot-message');
+        }
+    }
+
+    function appendMessage(content, className) {
+        if(!chatWindow) return;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${className}`;
+        const p = document.createElement('p');
+        p.innerHTML = content;
+        messageDiv.appendChild(p);
+        chatWindow.appendChild(messageDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return messageDiv;
+    }
 });

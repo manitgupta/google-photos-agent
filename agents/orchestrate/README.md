@@ -19,6 +19,7 @@ export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL},
 
 ```aiexclude
 echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
+echo "PROJECT_NUMBER=${PROJECT_NUMBER}" >> orchestrate/.env
 ```
 
 ### Running locally 
@@ -51,6 +52,7 @@ export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL},
 
 ```aiexclude
 echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
+echo "PROJECT_NUMBER=${PROJECT_NUMBER}" >> orchestrate/.env
 ```
 
 adk deploy agent_engine \

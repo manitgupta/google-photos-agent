@@ -143,6 +143,16 @@ def get_people_in_photos_db(photo_ids):
     fields = ["photo_id", "name"]
     return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
 
+
+def get_person_by_name_db(person_name):
+    """Fetch a person's details from Spanner by name."""
+    sql = "SELECT person_id, name FROM Person WHERE LOWER(name) = LOWER(@person_name)"
+    params = {"person_name": person_name}
+    param_types_map = {"person_name": param_types.STRING}
+    fields = ["person_id", "name"]
+    return run_query(sql, params=params, param_types=param_types_map, expected_fields=fields)
+
+
 def add_memory_db(memory_id, user_id, memory_title, memory_description, memory_media):
     """Inserts a new memory into the Spanner database."""
     if not db:

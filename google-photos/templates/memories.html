@@ -17,10 +17,10 @@
                     <p>{{ memory.memory_description }}</p>
                     
                     {% if memory.memory_media %}
-                        <div class="memory-card-photos">
-                            {% for media_url in memory.memory_media %}
-                                <img src="{{ media_url }}" alt="Memory media" class="memory-photo-thumb">
-                            {% endfor %}
+                        <div class="photo-grid">
+                            <div class="photo-item">
+                                <img src="{{ memory.memory_media }}" alt="Memory media">
+                            </div>
                         </div>
                     {% endif %}
 
