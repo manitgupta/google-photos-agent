@@ -1,5 +1,9 @@
+```aiexclude
 . ~/google-photos-agent/set_env.sh
 cd ~/google-photos-agent/agents
+```
+
+```aiexclude
 export MCP_SERVER_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep photos-tool-server)/sse
 
 export IMAGE_TAG="latest"
@@ -17,7 +21,9 @@ gcloud builds submit . \
   --substitutions=_AGENT_NAME=${AGENT_NAME},_IMAGE_PATH=${IMAGE_PATH}
 
 echo "Image built and pushed to: ${IMAGE_PATH}"
+```
 
+```aiexclude
 gcloud run deploy ${SERVICE_NAME} \
   --image=${IMAGE_PATH} \
   --platform=managed \
@@ -32,4 +38,6 @@ gcloud run deploy ${SERVICE_NAME} \
   --allow-unauthenticated \
   --project=${PROJECT_ID} \
   --min-instances=1
+```
+
 

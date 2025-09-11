@@ -1,7 +1,9 @@
+```aiexclude
 . ~/google-photos-agent/set_env.sh
-
 cd ~/google-photos-agent/tools/google-photos
+```
 
+```aiexclude
 export IMAGE_TAG="latest"
 export MCP_IMAGE_NAME="mcp-tool-server"
 export IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${MCP_IMAGE_NAME}:${IMAGE_TAG}"
@@ -12,7 +14,9 @@ gcloud builds submit . \
   --tag=${IMAGE_PATH} \
   --project=${PROJECT_ID}
 
+```
 
+```aiexclude
 gcloud run deploy ${SERVICE_NAME} \
   --image=${IMAGE_PATH} \
   --platform=managed \
@@ -28,3 +32,4 @@ gcloud run deploy ${SERVICE_NAME} \
   --min-instances=1
 
 export MCP_SERVER_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep photos-tool-server)/sse
+```

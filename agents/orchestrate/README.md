@@ -2,17 +2,23 @@
 
 ### Set up remote address for all the other agents
 
+**Note**: First ensure that all the other agents are deployed and running by cloud run by following
+their individual README files.
+
 ```aiexclude
 . ~/google-photos-agent/set_env.sh
 source ~/google-photos-agent/env/bin/activate
+cd  ~/google-photos-agent/agents
 
 export MEMORY_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep memory-agent)
-export SOCIAL_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-agent)
+export SOCIAL_PROFILING_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-profiling-agent)
+export PHOTOS_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep photos-agent)
 
-export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_AGENT_URL}
+export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL},${PHOTOS_AGENT_URL}
+```
 
-cd  ~/google-photos-agent/agents
-sed -i "s|^\(O\?REMOTE_AGENT_ADDRESSES\)=.*|REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}|" ~/google-photos-agent/agents/orchestrate/.env
+```aiexclude
+echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
 ```
 
 ### Running locally 
@@ -38,10 +44,10 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 source ~/google-photos-agent/env/bin/activate
 export MEMORY_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep memory-agent)
-export SOCIAL_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-agent)
+export SOCIAL_PROFILING_AGENT_URL=$(gcloud run services list --platform=managed --region=us-central1 --format='value(URL)' | grep social-agent)
 
-export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_AGENT_URL}
-sed -i "s|^\(O\?REMOTE_AGENT_ADDRESSES\)=.*|REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}|" ~/google-photos-agent/agents/orchestrate/.env
+export REMOTE_AGENT_ADDRESSES=${MEMORY_AGENT_URL},${SOCIAL_PROFILING_AGENT_URL}
+echo "REMOTE_AGENT_ADDRESSES=${REMOTE_AGENT_ADDRESSES}" > orchestrate/.env
 
 adk deploy agent_engine \
 --display_name "orchestrate-agent" \
@@ -56,14 +62,16 @@ orchestrate
 ### Sample prompt 
 
 ```aiexclude
-You are an expert collage creator for a user named Rohan.
+You are an expert collage creator. The current logged in user is Rohan.
 Your task is to design a fun collage for Rohan based on his request.
 
 Here are the details for the collage to be made:
 - Friends that should be in the collage: Anjali, Priya
+- Once the collage is created, post it to the Google Photos app
 
 Your process should be:
 1. Analyze the provided friend names. If you have access to a tool to get their photographs, please use it.
 2. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
-3. If you don't find any photos, inform that you will be not able to create a collage.
+3. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it.
+4. If you don't find any photos, inform that you will be not able to create a collage.
 ```

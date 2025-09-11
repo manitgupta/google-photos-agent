@@ -134,12 +134,14 @@ class HostAgent:
 
                     *   **Understand User Intent & Complexity:**
                         *   Carefully analyze the user's request to determine the core task(s) they want to achieve. Pay close attention to keywords and the overall goal.
-                        *   Identify if the request requires a single agent or a sequence of actions from multiple agents. For example, "Generate a collage of Rohan and Anjali" would require two agents in sequence.
+                        *   Identify if the request requires a single agent or a sequence of actions from multiple agents. 
+                            For example, "Generate a collage of Rohan and Anjali" would require two agents in sequence.
+                            For example, "Generate a collage of Rohan and Anjali and post it on the Google Photos App" would require three agents in sequence.
 
                     *   **Task Planning & Sequencing (for Multi-Step Requests):**
                         *   Before delegating, outline the clear sequence of agent tasks.
                         *   Identify dependencies. If Task B requires output from Task A, execute them sequentially. If tasks are independent (like finding the images of the people in the prompt and then creating a collage), execute them one after the other as separate delegations.
-                        *   Agent Reusability: An agent's completion of one task does not make it unavailable. If a user's plan involves multiple, distinct actions that fall under the same agent's expertise (e.g., find relationships, then create a collage), you must call that same agent again for the subsequent task.
+                        *   Agent Reusability: An agent's completion of one task does not make it unavailable. If a user's plan involves multiple, distinct actions that fall under the same agent's expertise (e.g., find relationships, then create a collage, then post it to Google Photos), you must call that same agent again for the subsequent task.
 
                     *   **Task Delegation & Management (using `send_message`):**
                         *   **Delegation:** Use `send_message` to assign actionable tasks to the selected remote agent. Your `send_message` call MUST include:

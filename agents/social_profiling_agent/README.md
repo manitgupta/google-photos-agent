@@ -4,6 +4,7 @@ Create a virtual environment and install the required packages.
 
 ```aiexclude
 # From your project root directory
+source set_env.sh
 python -m venv env
 source env/bin/activate
 pip install -r agents/social_profiling_agent/requirements.txt
