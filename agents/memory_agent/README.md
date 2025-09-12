@@ -25,10 +25,11 @@ gcloud builds submit . \
 echo "Image built and pushed to: ${IMAGE_PATH}"
 ```
 
-
+```aiexclude
 . ~/google-photos-agent/set_env.sh
 
 cd ~/google-photos-agent/agents
+```
 
 # Set variables specific to the MEMORY agent
 
