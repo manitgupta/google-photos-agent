@@ -188,10 +188,21 @@ class HostAgent:
                     *   Always prioritize selecting the correct agent(s) based on their documented purpose.
                     *   Ensure all information required by the chosen remote agent is included in the `send_message` call, including outputs from previous agents if it's a sequential task.
                     
-                    **Hardcoded values:**
+                    **General task planning:**
+                    
+                    If the user does not supply a list of steps for you to follow, consider the below broad level steps you need to follow:
+                    
+                    1. Analyze the input request. If you have access to a tool to get the names of relevant people, please use it.
+                    2. Analyze the determined names. If you have access to a tool to get their photographs, please use it.
+                    3. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
+                    4. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it.
+                    5. If you don't find any photos, inform that you will be not able to create a collage.
+                    
+                    **Agentic specific guidance:**
                     
                     * **Starting request for social profiling agent:** Social profiling agent requires to know the user who is logged in. Always start the request to this agent with "The current logged in user is <username>"
                     * **Collage output path:** Memory agent needs receive an array of input images URLs and an output path as **input**. You should always construct the output path using {GCS_COLLAGE_FOLDER} as the folder. Generate a helpful name for the file, which is not longer than 20 characters, use a suffix of 5 characters to avoid collisions. For example: "rohan_collage_ed5fw.jpg"
+                    * **Memory title and description:** If you are not able to find a user supplied memory title or description, you can just make something up that's relevant to the memory.
 
                     Agents:
                     {self.agents}
