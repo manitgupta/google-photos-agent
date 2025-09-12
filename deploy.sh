@@ -11,7 +11,7 @@ export IMAGE_NAME="google-photos-webapp"
 export IMAGE_TAG="latest"
 export IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
 export SERVICE_NAME="google-photos-agent"
-export ORCHESTRATE_AGENT_ID=projects/383364302094/locations/us-central1/reasoningEngines/1309918570913726464
+export ORCHESTRATE_AGENT_ID=projects/383364302094/locations/us-central1/reasoningEngines/1669643591149944832
 
 
 # Submit the build to Cloud Build

@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 method: 'GET',
             });
 
-            thinkingIndicator.remove();
+            
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -148,11 +148,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const eventData = JSON.parse(line.substring(6));
-                        if (eventData.type === 'thought') {
-                            appendMessage(`<i>${eventData.data}</i>`, 'bot-message thought-message');
+                        if (eventData.type === 'collage_generated') {
+                            thinkingIndicator.remove();
+                            const gcsUri = eventData.data.url;
+                            appendMessage("I've created a collage for you! You can find it at: " + gcsUri + "<br><a href='/memories'>View Memories</a>", 'bot-message');
                         } else if (eventData.type === 'final_response') {
+                            thinkingIndicator.remove();
                             handleFinalResponse(eventData.data);
                         } else if (eventData.type === 'error') {
+                            thinkingIndicator.remove();
                             appendMessage(`Sorry, I encountered an error: ${eventData.data.message}`, 'bot-message error-message');
                         }
                     }
@@ -171,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (match) {
             const gcsUri = match[0];
-            appendMessage("I've created a collage for you! You can find it at: " + gcsUri, 'bot-message');
+            appendMessage("I've created a collage for you! You can find it at: " + gcsUri + "<br><a href='/memories'>View Memories</a>", 'bot-message');
         } else {
             appendMessage(data, 'bot-message');
         }

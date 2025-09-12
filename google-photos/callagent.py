@@ -35,10 +35,11 @@ def call_orchestrator_agent(user_name: str, user_prompt: str):
     - Once the collage is created, post it to the Google Photos app
 
     Your process should be:
-    1. Analyze the provided friend names. If you have access to a tool to get their photographs, please use it.
-    2. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
-    3. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it. The photo should also be added to the memories table in the database.
-    4. If you don't find any photos, inform that you will be not able to create a collage.
+    1. Analyze the input request. If you have access to a tool to get the names of relevant people, please use it.
+    2. Analyze the determined names. If you have access to a tool to get their photographs, please use it.
+    3. Based on the fetched photos, if you have access to a tool to create a collage out of them, please use it.
+    4. Based on the created collage, if you have access to a tool that posts the collage to the Google photos app, please use it.
+    5. If you don't find any photos, inform that you will be not able to create a collage.
     """
 
     print(f"--- Sending Prompt to Orchestrator Agent ---")
